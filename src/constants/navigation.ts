@@ -3,6 +3,7 @@ export interface NavItem {
   label: string
   path: string
   icon: string
+  indent?: boolean
 }
 
 export const NAV_ITEMS: NavItem[] = [
@@ -22,6 +23,13 @@ export const NAV_ITEMS: NavItem[] = [
   },
   { id: 'inventory', label: 'Inventory', path: '/inventory', icon: 'package' },
   { id: 'operations', label: 'Operations', path: '/operations', icon: 'cog' },
+  {
+    id: 'process',
+    label: 'Process Details',
+    path: '/process',
+    icon: 'process',
+    indent: true,
+  },
   {
     id: 'simulation',
     label: 'Simulation & Scenarios',

@@ -7,6 +7,7 @@ import {
   Bell,
   Boxes,
   CircleHelp,
+  ClipboardList,
   FlaskConical,
   Cog,
   GitFork,
@@ -26,6 +27,7 @@ const ICONS: Record<string, LucideIcon> = {
   network: Network,
   package: Boxes,
   cog: Cog,
+  process: ClipboardList,
   flask: FlaskConical,
   chart: BarChart3,
   bell: Bell,
@@ -62,11 +64,11 @@ export function Sidebar({ collapsed, mobileOpen, onNavigate }: SidebarProps) {
             <Link
               key={item.id}
               href={item.path}
-              className={`sidebar__link ${isActive ? 'is-active' : ''}`}
+              className={`sidebar__link ${item.indent ? 'sidebar__link--sub' : ''} ${isActive ? 'is-active' : ''}`}
               onClick={onNavigate}
               title={collapsed ? item.label : undefined}
             >
-              <Icon size={18} strokeWidth={1.75} aria-hidden="true" />
+              <Icon size={item.indent ? 16 : 18} strokeWidth={1.75} aria-hidden="true" />
               <span>{item.label}</span>
             </Link>
           )

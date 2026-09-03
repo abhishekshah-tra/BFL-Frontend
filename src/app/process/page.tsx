@@ -1,15 +1,15 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { OperationsPage } from '@/components/personas/OperationsPage'
+import { ProcessPage } from '@/components/personas/ProcessPage'
 
 export const metadata: Metadata = {
-  title: 'Operations',
+  title: 'Process Details',
 }
 
-export default function OperationsRoute() {
+export default function ProcessRoute() {
   return (
     <Suspense fallback={null}>
-      <OperationsPage />
+      <ProcessPage />
     </Suspense>
   )
 }

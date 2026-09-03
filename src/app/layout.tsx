@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import { Inter } from 'next/font/google'
-import { AppLayout } from '@/components/layout/AppLayout'
+import { AuthGate } from '@/components/auth/AuthGate'
 import './globals.css'
+import '@/styles/personas.css'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -28,8 +29,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <AppLayout>{children}</AppLayout>
+      {/*
+        suppressHydrationWarning on <body> only ignores mismatches on this exact
+        element (e.g. attributes injected by browser extensions like ColorZilla's
+        `cz-shortcut-listen`). It does NOT suppress hydration warnings anywhere
+        else in the tree.
+      */}
+      <body className={inter.className} suppressHydrationWarning>
+        <AuthGate>{children}</AuthGate>
       </body>
     </html>
   )

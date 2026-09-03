@@ -1,15 +1,10 @@
 import type { Metadata } from 'next'
-import { PlaceholderPage } from '@/components/pages/PlaceholderPage'
+import { ControlTowerPage } from '@/components/personas/ControlTowerPage'
 
 export const metadata: Metadata = {
   title: 'Control Tower',
 }
 
-export default function ControlTowerPage() {
-  return (
-    <PlaceholderPage
-      title="Control Tower"
-      description="Network-level operational control tower is coming next."
-    />
-  )
+export default function ControlTowerRoute() {
+  return <ControlTowerPage />
 }
