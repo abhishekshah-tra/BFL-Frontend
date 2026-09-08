@@ -1,0 +1,1013 @@
+/* BFL Personas mock data – ported from HTML prototype (exact values) */
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export const processData = {
+  'Robo Sorting': {
+    status: 'Critical',
+    statusColor: '#dc2626',
+    queue: '1,180 Units',
+    wait: '38 mins',
+    util: 94,
+    workload: 2800,
+    capacity: 2400,
+    sla: 82,
+    gaugeColor: '#ef4444',
+    incoming: '2,800 Units/hr',
+    processing: '2,400 Units/hr',
+    scan: '4.2 sec',
+    proctime: '6.8 sec',
+    downstream: 'High',
+    downstreamClass: 'impact-high',
+    journeys: '125 Journeys | 4,860 Units',
+  },
+  Receive: {
+    status: 'Good',
+    statusColor: '#059669',
+    queue: '45 Units',
+    wait: '12 mins',
+    util: 73,
+    workload: 2200,
+    capacity: 3000,
+    sla: 96,
+    gaugeColor: '#059669',
+    incoming: '2,200 Units/hr',
+    processing: '3,000 Units/hr',
+    scan: '3.1 sec',
+    proctime: '4.5 sec',
+    downstream: 'Low',
+    downstreamClass: '',
+    journeys: '18 Journeys | 420 Units',
+  },
+  Checking: {
+    status: 'Good',
+    statusColor: '#059669',
+    queue: '52 Units',
+    wait: '15 mins',
+    util: 75,
+    workload: 2100,
+    capacity: 2800,
+    sla: 94,
+    gaugeColor: '#059669',
+    incoming: '2,100 Units/hr',
+    processing: '2,800 Units/hr',
+    scan: '3.8 sec',
+    proctime: '5.2 sec',
+    downstream: 'Low',
+    downstreamClass: '',
+    journeys: '22 Journeys | 510 Units',
+  },
+  Tagging: {
+    status: 'Good',
+    statusColor: '#059669',
+    queue: '48 Units',
+    wait: '14 mins',
+    util: 77,
+    workload: 2000,
+    capacity: 2600,
+    sla: 93,
+    gaugeColor: '#059669',
+    incoming: '2,000 Units/hr',
+    processing: '2,600 Units/hr',
+    scan: '3.5 sec',
+    proctime: '5.0 sec',
+    downstream: 'Low',
+    downstreamClass: '',
+    journeys: '20 Journeys | 480 Units',
+  },
+  Allocation: {
+    status: 'At Risk',
+    statusColor: '#d97706',
+    queue: '285 Units',
+    wait: '28 mins',
+    util: 96,
+    workload: 2400,
+    capacity: 2500,
+    sla: 85,
+    gaugeColor: '#f97316',
+    incoming: '2,400 Units/hr',
+    processing: '2,500 Units/hr',
+    scan: '4.0 sec',
+    proctime: '6.0 sec',
+    downstream: 'Medium',
+    downstreamClass: '',
+    journeys: '68 Journeys | 1,240 Units',
+  },
+  Staging: {
+    status: 'At Risk',
+    statusColor: '#d97706',
+    queue: '320 Units',
+    wait: '32 mins',
+    util: 92,
+    workload: 2200,
+    capacity: 2400,
+    sla: 84,
+    gaugeColor: '#f97316',
+    incoming: '2,200 Units/hr',
+    processing: '2,400 Units/hr',
+    scan: '3.9 sec',
+    proctime: '5.8 sec',
+    downstream: 'Medium',
+    downstreamClass: '',
+    journeys: '85 Journeys | 1,580 Units',
+  },
+  Dispatch: {
+    status: 'Good',
+    statusColor: '#059669',
+    queue: '25 Units',
+    wait: '8 mins',
+    util: 69,
+    workload: 1800,
+    capacity: 2600,
+    sla: 97,
+    gaugeColor: '#059669',
+    incoming: '1,800 Units/hr',
+    processing: '2,600 Units/hr',
+    scan: '2.8 sec',
+    proctime: '4.0 sec',
+    downstream: 'Low',
+    downstreamClass: '',
+    journeys: '12 Journeys | 280 Units',
+  },
+};
+
+export const OPS_PROCESS_KEYS = [
+  'Receive',
+  'Checking',
+  'Tagging',
+  'Allocation',
+  'Robo Sorting',
+  'Staging',
+  'Dispatch',
+];
+
+export function opsProcessRow(
+  key,
+  workload,
+  capacity,
+  util,
+  queue,
+  wait,
+  sla,
+  status,
+  statusClass,
+  rowCritical,
+) {
+  const utilN = parseInt(util, 10);
+  const slaN = parseInt(sla, 10);
+  const queueN = parseInt(String(queue).replace(/,/g, ''), 10);
+  const waitN = parseInt(wait, 10);
+  const wlN = parseInt(String(workload).replace(/,/g, ''), 10);
+  const capN = parseInt(String(capacity).replace(/,/g, ''), 10);
+  return {
+    key,
+    workload,
+    capacity,
+    util,
+    queue,
+    wait,
+    sla,
+    status,
+    statusClass,
+    rowCritical: !!rowCritical,
+    workloadClass: wlN >= 2400 ? 'val-red' : 'val-green',
+    utilClass: utilN >= 90 ? 'val-red' : 'val-green',
+    queueClass: queueN >= 100 ? 'val-red' : 'val-red',
+    waitClass: waitN >= 20 ? 'val-red' : 'val-red',
+    slaClass: slaN >= 90 ? 'val-green' : slaN >= 85 ? '' : 'val-red',
+    capacityClass: capN <= 2500 && wlN >= 2400 ? 'val-red' : '',
+  };
+}
+
+export const OPS_TIMEFRAME_DATA = {
+  today: {
+    TECHNO: {
+      kpis: {
+        throughput: '51,300',
+        unit: 'Units / Day',
+        throughputTrend: '↓ 2.1% vs Yesterday',
+        throughputTrendClass: 'down',
+        capacity: '94%',
+        capacityTrend: '↑ 3% vs Yesterday',
+        capacityTrendClass: 'up',
+        sla: '82%',
+        slaTrend: '↓ 4% vs Yesterday',
+        slaTrendClass: 'down',
+        wait: '42',
+        waitTrend: '↑ 8 mins',
+        waitTrendClass: 'orange',
+        alerts: '4',
+        throughputDetail: 'TECHNO throughput: 51,300 units per day',
+        capacityDetail: 'Capacity utilization at 94%, approaching maximum',
+        slaDetail: 'SLA achievement dropped due to Robo Sorting bottleneck',
+        alertsDetail: '4 active alerts for TECHNO warehouse',
+      },
+      insight: {
+        subtitle: 'Robo Sorting – TECHNO',
+        text: 'Incoming workload (2,800/hr) exceeds capacity (2,400/hr) causing queue build-up and SLA risk.',
+      },
+      flow: {
+        Receive: 'good',
+        Checking: 'good',
+        Tagging: 'good',
+        Allocation: 'at-risk',
+        'Robo Sorting': 'critical',
+        Staging: 'at-risk',
+        Dispatch: 'good',
+      },
+      processes: [
+        opsProcessRow('Receive', '2,200', '3,000', '73%', '45', '12', '96%', 'Good', 'good'),
+        opsProcessRow('Checking', '2,100', '2,800', '75%', '52', '15', '94%', 'Good', 'good'),
+        opsProcessRow('Tagging', '2,000', '2,600', '77%', '48', '14', '93%', 'Good', 'good'),
+        opsProcessRow('Allocation', '2,400', '2,500', '96%', '285', '28', '85%', 'At Risk', 'at-risk'),
+        opsProcessRow('Robo Sorting', '2,800', '2,400', '94%', '1,180', '38', '82%', 'Critical', 'critical', true),
+        opsProcessRow('Staging', '2,200', '2,400', '92%', '320', '32', '84%', 'At Risk', 'at-risk'),
+        opsProcessRow('Dispatch', '1,800', '2,600', '69%', '25', '8', '97%', 'Good', 'good'),
+      ],
+    },
+    YOTO: {
+      kpis: {
+        throughput: '48,200',
+        unit: 'Units / Day',
+        throughputTrend: '↑ 1.5% vs Yesterday',
+        throughputTrendClass: 'up',
+        capacity: '78%',
+        capacityTrend: '↑ 2% vs Yesterday',
+        capacityTrendClass: 'up',
+        sla: '96%',
+        slaTrend: '↑ 1% vs Yesterday',
+        slaTrendClass: 'up',
+        wait: '28',
+        waitTrend: '↓ 3 mins',
+        waitTrendClass: 'up',
+        alerts: '2',
+        throughputDetail: 'YOTO throughput: 48,200 units per day',
+        capacityDetail: 'Capacity utilization at 78%, healthy headroom available',
+        slaDetail: 'SLA achievement strong at 96% across YOTO processes',
+        alertsDetail: '2 active alerts for YOTO warehouse',
+      },
+      insight: {
+        subtitle: 'Receiving – YOTO',
+        text: 'Morning inbound spike (2,400/hr) briefly exceeds receiving capacity during peak hours.',
+      },
+      flow: {
+        Receive: 'at-risk',
+        Checking: 'good',
+        Tagging: 'good',
+        Allocation: 'good',
+        'Robo Sorting': 'good',
+        Staging: 'good',
+        Dispatch: 'good',
+      },
+      processes: [
+        opsProcessRow('Receive', '2,400', '2,800', '86%', '120', '22', '91%', 'At Risk', 'at-risk'),
+        opsProcessRow('Checking', '2,200', '3,000', '73%', '38', '10', '97%', 'Good', 'good'),
+        opsProcessRow('Tagging', '2,100', '2,700', '78%', '42', '11', '95%', 'Good', 'good'),
+        opsProcessRow('Allocation', '2,000', '2,600', '77%', '55', '14', '94%', 'Good', 'good'),
+        opsProcessRow('Robo Sorting', '2,100', '2,800', '75%', '68', '16', '96%', 'Good', 'good'),
+        opsProcessRow('Staging', '1,900', '2,500', '76%', '40', '12', '95%', 'Good', 'good'),
+        opsProcessRow('Dispatch', '1,800', '2,600', '69%', '18', '7', '98%', 'Good', 'good'),
+      ],
+    },
+    JAFZA: {
+      kpis: {
+        throughput: '44,800',
+        unit: 'Units / Day',
+        throughputTrend: '↑ 2.3% vs Yesterday',
+        throughputTrendClass: 'up',
+        capacity: '86%',
+        capacityTrend: '↑ 1% vs Yesterday',
+        capacityTrendClass: 'up',
+        sla: '91%',
+        slaTrend: '→ Same as Yesterday',
+        slaTrendClass: 'orange',
+        wait: '35',
+        waitTrend: '↑ 4 mins',
+        waitTrendClass: 'orange',
+        alerts: '3',
+        throughputDetail: 'JAFZA throughput: 44,800 units per day',
+        capacityDetail: 'Capacity utilization at 86%, counting process under pressure',
+        slaDetail: 'SLA achievement at 91%, counting bottleneck impacting performance',
+        alertsDetail: '3 active alerts for JAFZA warehouse',
+      },
+      insight: {
+        subtitle: 'Counting – JAFZA',
+        text: 'Counting workload (2,300/hr) nearing capacity (2,500/hr) with growing queue during afternoon shift.',
+      },
+      flow: {
+        Receive: 'good',
+        Checking: 'at-risk',
+        Tagging: 'good',
+        Allocation: 'good',
+        'Robo Sorting': 'good',
+        Staging: 'at-risk',
+        Dispatch: 'good',
+      },
+      processes: [
+        opsProcessRow('Receive', '2,100', '2,900', '72%', '50', '13', '95%', 'Good', 'good'),
+        opsProcessRow('Checking', '2,300', '2,500', '92%', '210', '26', '86%', 'At Risk', 'at-risk'),
+        opsProcessRow('Tagging', '2,000', '2,600', '77%', '45', '14', '93%', 'Good', 'good'),
+        opsProcessRow('Allocation', '2,100', '2,600', '81%', '72', '18', '92%', 'Good', 'good'),
+        opsProcessRow('Robo Sorting', '2,000', '2,700', '74%', '58', '15', '94%', 'Good', 'good'),
+        opsProcessRow('Staging', '2,200', '2,400', '92%', '180', '29', '85%', 'At Risk', 'at-risk'),
+        opsProcessRow('Dispatch', '1,700', '2,500', '68%', '22', '9', '97%', 'Good', 'good'),
+      ],
+    },
+  },
+  yesterday: {
+    TECHNO: {
+      kpis: {
+        throughput: '48,900',
+        unit: 'Units / Day',
+        throughputTrend: '↓ 4.5% vs Prior Day',
+        throughputTrendClass: 'down',
+        capacity: '91%',
+        capacityTrend: '↓ 2% vs Prior Day',
+        capacityTrendClass: 'down',
+        sla: '79%',
+        slaTrend: '↓ 3% vs Prior Day',
+        slaTrendClass: 'down',
+        wait: '48',
+        waitTrend: '↑ 12 mins',
+        waitTrendClass: 'orange',
+        alerts: '6',
+        throughputDetail: 'TECHNO throughput yesterday: 48,900 units',
+        capacityDetail: 'Capacity utilization was 91% yesterday with sustained peak load',
+        slaDetail: 'SLA dropped to 79% due to extended Robo Sorting queue',
+        alertsDetail: '6 active alerts recorded yesterday for TECHNO',
+      },
+      insight: {
+        subtitle: 'Robo Sorting – TECHNO',
+        text: 'Yesterday peak queue reached 1,320 units. Workload exceeded capacity for 6 consecutive hours.',
+      },
+      flow: {
+        Receive: 'good',
+        Checking: 'good',
+        Tagging: 'good',
+        Allocation: 'at-risk',
+        'Robo Sorting': 'critical',
+        Staging: 'critical',
+        Dispatch: 'at-risk',
+      },
+      processes: [
+        opsProcessRow('Receive', '2,100', '3,000', '70%', '52', '14', '95%', 'Good', 'good'),
+        opsProcessRow('Checking', '2,000', '2,800', '71%', '58', '16', '93%', 'Good', 'good'),
+        opsProcessRow('Tagging', '1,900', '2,600', '73%', '55', '15', '92%', 'Good', 'good'),
+        opsProcessRow('Allocation', '2,300', '2,500', '92%', '310', '32', '83%', 'At Risk', 'at-risk'),
+        opsProcessRow('Robo Sorting', '2,700', '2,400', '96%', '1,320', '45', '78%', 'Critical', 'critical', true),
+        opsProcessRow('Staging', '2,300', '2,400', '96%', '380', '38', '80%', 'Critical', 'critical', true),
+        opsProcessRow('Dispatch', '1,700', '2,600', '65%', '35', '10', '95%', 'At Risk', 'at-risk'),
+      ],
+    },
+    YOTO: {
+      kpis: {
+        throughput: '46,800',
+        unit: 'Units / Day',
+        throughputTrend: '↓ 1.2% vs Prior Day',
+        throughputTrendClass: 'down',
+        capacity: '76%',
+        capacityTrend: '↓ 1% vs Prior Day',
+        capacityTrendClass: 'down',
+        sla: '95%',
+        slaTrend: '↓ 1% vs Prior Day',
+        slaTrendClass: 'down',
+        wait: '31',
+        waitTrend: '↑ 2 mins',
+        waitTrendClass: 'orange',
+        alerts: '3',
+        throughputDetail: 'YOTO throughput yesterday: 46,800 units',
+        capacityDetail: 'Capacity utilization was 76% yesterday',
+        slaDetail: 'SLA at 95% yesterday with minor receiving delays',
+        alertsDetail: '3 alerts recorded yesterday for YOTO',
+      },
+      insight: {
+        subtitle: 'Receiving – YOTO',
+        text: 'Yesterday inbound volume peaked 12% above forecast during morning shift.',
+      },
+      flow: {
+        Receive: 'at-risk',
+        Checking: 'good',
+        Tagging: 'good',
+        Allocation: 'good',
+        'Robo Sorting': 'good',
+        Staging: 'good',
+        Dispatch: 'good',
+      },
+      processes: [
+        opsProcessRow('Receive', '2,300', '2,800', '82%', '145', '25', '89%', 'At Risk', 'at-risk'),
+        opsProcessRow('Checking', '2,100', '3,000', '70%', '42', '11', '96%', 'Good', 'good'),
+        opsProcessRow('Tagging', '2,000', '2,700', '74%', '48', '12', '94%', 'Good', 'good'),
+        opsProcessRow('Allocation', '1,900', '2,600', '73%', '62', '15', '93%', 'Good', 'good'),
+        opsProcessRow('Robo Sorting', '2,000', '2,800', '71%', '75', '17', '95%', 'Good', 'good'),
+        opsProcessRow('Staging', '1,800', '2,500', '72%', '45', '13', '94%', 'Good', 'good'),
+        opsProcessRow('Dispatch', '1,700', '2,600', '65%', '22', '8', '97%', 'Good', 'good'),
+      ],
+    },
+    JAFZA: {
+      kpis: {
+        throughput: '43,200',
+        unit: 'Units / Day',
+        throughputTrend: '↓ 2.8% vs Prior Day',
+        throughputTrendClass: 'down',
+        capacity: '84%',
+        capacityTrend: '↓ 1% vs Prior Day',
+        capacityTrendClass: 'down',
+        sla: '89%',
+        slaTrend: '↓ 2% vs Prior Day',
+        slaTrendClass: 'down',
+        wait: '38',
+        waitTrend: '↑ 6 mins',
+        waitTrendClass: 'orange',
+        alerts: '5',
+        throughputDetail: 'JAFZA throughput yesterday: 43,200 units',
+        capacityDetail: 'Capacity utilization was 84% yesterday',
+        slaDetail: 'SLA at 89% with counting delays yesterday afternoon',
+        alertsDetail: '5 alerts recorded yesterday for JAFZA',
+      },
+      insight: {
+        subtitle: 'Counting – JAFZA',
+        text: 'Yesterday counting queue peaked at 245 units with 31 min average wait time.',
+      },
+      flow: {
+        Receive: 'good',
+        Checking: 'critical',
+        Tagging: 'good',
+        Allocation: 'at-risk',
+        'Robo Sorting': 'good',
+        Staging: 'at-risk',
+        Dispatch: 'good',
+      },
+      processes: [
+        opsProcessRow('Receive', '2,000', '2,900', '69%', '55', '14', '94%', 'Good', 'good'),
+        opsProcessRow('Checking', '2,400', '2,500', '96%', '245', '31', '82%', 'Critical', 'critical', true),
+        opsProcessRow('Tagging', '1,900', '2,600', '73%', '50', '15', '92%', 'Good', 'good'),
+        opsProcessRow('Allocation', '2,200', '2,600', '85%', '95', '22', '88%', 'At Risk', 'at-risk'),
+        opsProcessRow('Robo Sorting', '1,900', '2,700', '70%', '62', '16', '93%', 'Good', 'good'),
+        opsProcessRow('Staging', '2,300', '2,400', '96%', '210', '33', '82%', 'At Risk', 'at-risk'),
+        opsProcessRow('Dispatch', '1,600', '2,500', '64%', '28', '10', '96%', 'Good', 'good'),
+      ],
+    },
+  },
+  last7: {
+    TECHNO: {
+      kpis: {
+        throughput: '50,800',
+        unit: 'Avg Units / Day',
+        throughputTrend: '↑ 3.2% vs Prior Week',
+        throughputTrendClass: 'up',
+        capacity: '92%',
+        capacityTrend: '↑ 1% vs Prior Week',
+        capacityTrendClass: 'up',
+        sla: '80%',
+        slaTrend: '↓ 1% vs Prior Week',
+        slaTrendClass: 'down',
+        wait: '44',
+        waitTrend: '↑ 5 mins avg',
+        waitTrendClass: 'orange',
+        alerts: '3',
+        throughputDetail: 'TECHNO 7-day avg throughput: 50,800 units/day (355,600 total)',
+        capacityDetail: '7-day avg capacity utilization: 92%',
+        slaDetail: '7-day avg SLA: 80%, Robo Sorting bottleneck on 4 of 7 days',
+        alertsDetail: '3 avg daily alerts over the last 7 days for TECHNO',
+      },
+      insight: {
+        subtitle: 'Robo Sorting – TECHNO',
+        text: 'Weekly trend: Robo Sorting exceeded capacity on 4 days. Hybrid staffing recommended for peak windows.',
+      },
+      flow: {
+        Receive: 'good',
+        Checking: 'good',
+        Tagging: 'good',
+        Allocation: 'at-risk',
+        'Robo Sorting': 'critical',
+        Staging: 'at-risk',
+        Dispatch: 'good',
+      },
+      processes: [
+        opsProcessRow('Receive', '2,150', '3,000', '72%', '48', '13', '95%', 'Good', 'good'),
+        opsProcessRow('Checking', '2,050', '2,800', '73%', '54', '15', '93%', 'Good', 'good'),
+        opsProcessRow('Tagging', '1,950', '2,600', '75%', '50', '14', '92%', 'Good', 'good'),
+        opsProcessRow('Allocation', '2,350', '2,500', '94%', '295', '29', '84%', 'At Risk', 'at-risk'),
+        opsProcessRow('Robo Sorting', '2,750', '2,400', '93%', '1,240', '40', '80%', 'Critical', 'critical', true),
+        opsProcessRow('Staging', '2,150', '2,400', '90%', '340', '33', '83%', 'At Risk', 'at-risk'),
+        opsProcessRow('Dispatch', '1,750', '2,600', '67%', '28', '9', '96%', 'Good', 'good'),
+      ],
+    },
+    YOTO: {
+      kpis: {
+        throughput: '47,600',
+        unit: 'Avg Units / Day',
+        throughputTrend: '↑ 2.1% vs Prior Week',
+        throughputTrendClass: 'up',
+        capacity: '77%',
+        capacityTrend: '→ Stable vs Prior Week',
+        capacityTrendClass: 'orange',
+        sla: '95%',
+        slaTrend: '↑ 0.5% vs Prior Week',
+        slaTrendClass: 'up',
+        wait: '29',
+        waitTrend: '↓ 2 mins avg',
+        waitTrendClass: 'up',
+        alerts: '2',
+        throughputDetail: 'YOTO 7-day avg throughput: 47,600 units/day',
+        capacityDetail: '7-day avg capacity utilization: 77%',
+        slaDetail: '7-day avg SLA: 95%, consistently strong performance',
+        alertsDetail: '2 avg daily alerts over the last 7 days for YOTO',
+      },
+      insight: {
+        subtitle: 'Receiving – YOTO',
+        text: 'Weekly receiving peaks on Mon/Wed. Average wait time improved 2 mins vs prior week.',
+      },
+      flow: {
+        Receive: 'at-risk',
+        Checking: 'good',
+        Tagging: 'good',
+        Allocation: 'good',
+        'Robo Sorting': 'good',
+        Staging: 'good',
+        Dispatch: 'good',
+      },
+      processes: [
+        opsProcessRow('Receive', '2,350', '2,800', '84%', '128', '21', '90%', 'At Risk', 'at-risk'),
+        opsProcessRow('Checking', '2,150', '3,000', '72%', '40', '11', '96%', 'Good', 'good'),
+        opsProcessRow('Tagging', '2,050', '2,700', '76%', '44', '12', '94%', 'Good', 'good'),
+        opsProcessRow('Allocation', '1,950', '2,600', '75%', '58', '14', '93%', 'Good', 'good'),
+        opsProcessRow('Robo Sorting', '2,050', '2,800', '73%', '65', '15', '95%', 'Good', 'good'),
+        opsProcessRow('Staging', '1,850', '2,500', '74%', '38', '11', '94%', 'Good', 'good'),
+        opsProcessRow('Dispatch', '1,750', '2,600', '67%', '20', '7', '97%', 'Good', 'good'),
+      ],
+    },
+    JAFZA: {
+      kpis: {
+        throughput: '44,100',
+        unit: 'Avg Units / Day',
+        throughputTrend: '↑ 1.8% vs Prior Week',
+        throughputTrendClass: 'up',
+        capacity: '85%',
+        capacityTrend: '↑ 1% vs Prior Week',
+        capacityTrendClass: 'up',
+        sla: '90%',
+        slaTrend: '→ Stable vs Prior Week',
+        slaTrendClass: 'orange',
+        wait: '36',
+        waitTrend: '↑ 3 mins avg',
+        waitTrendClass: 'orange',
+        alerts: '3',
+        throughputDetail: 'JAFZA 7-day avg throughput: 44,100 units/day',
+        capacityDetail: '7-day avg capacity utilization: 85%',
+        slaDetail: '7-day avg SLA: 90%, counting remains primary bottleneck',
+        alertsDetail: '3 avg daily alerts over the last 7 days for JAFZA',
+      },
+      insight: {
+        subtitle: 'Counting – JAFZA',
+        text: 'Counting utilization averaged 91% this week. Staging queue correlated with counting delays on 3 days.',
+      },
+      flow: {
+        Receive: 'good',
+        Checking: 'at-risk',
+        Tagging: 'good',
+        Allocation: 'good',
+        'Robo Sorting': 'good',
+        Staging: 'at-risk',
+        Dispatch: 'good',
+      },
+      processes: [
+        opsProcessRow('Receive', '2,050', '2,900', '71%', '52', '14', '94%', 'Good', 'good'),
+        opsProcessRow('Checking', '2,250', '2,500', '90%', '195', '27', '87%', 'At Risk', 'at-risk'),
+        opsProcessRow('Tagging', '1,950', '2,600', '75%', '48', '14', '92%', 'Good', 'good'),
+        opsProcessRow('Allocation', '2,050', '2,600', '79%', '68', '17', '91%', 'Good', 'good'),
+        opsProcessRow('Robo Sorting', '1,950', '2,700', '72%', '55', '14', '93%', 'Good', 'good'),
+        opsProcessRow('Staging', '2,150', '2,400', '90%', '175', '28', '84%', 'At Risk', 'at-risk'),
+        opsProcessRow('Dispatch', '1,650', '2,500', '66%', '24', '9', '96%', 'Good', 'good'),
+      ],
+    },
+  },
+};
+
+export const CT_TIMEFRAME_KEY = {
+  Today: 'today',
+  Yesterday: 'yesterday',
+  'Last 7 Days': 'last7',
+};
+
+export const CT_TIMEFRAME_DATA = {
+  today: {
+    kpis: {
+      throughput: {
+        value: '51,200',
+        unit: 'Units / Day',
+        trend: '↑ 8.2% vs Yesterday',
+        trendClass: 'up',
+        detail:
+          'Total Throughput: 51,200 units processed today across all warehouses. YOTO: 18,500 | JAFZA: 16,800 | TECHNO: 15,900',
+      },
+      capacity: {
+        value: '87%',
+        trend: '↑ 4% vs Yesterday',
+        trendClass: 'up',
+        detail: 'Capacity Utilization: 87% network-wide. TECHNO at 94% is driving the increase.',
+      },
+      sla: {
+        value: '91%',
+        trend: '↑ 2% vs Yesterday',
+        trendClass: 'up',
+        detail: 'SLA Achievement: 91% overall. TECHNO at 82% due to Robo Sorting bottleneck.',
+      },
+      bottlenecks: {
+        value: '3',
+        trend: '↓ 1 vs Yesterday',
+        trendClass: 'orange',
+        detail: '3 active bottlenecks: Robo Sorting (TECHNO), Counting (JAFZA), Receiving (YOTO).',
+      },
+      alerts: {
+        value: '7',
+        detail: '7 open alerts: 3 Critical (TECHNO), 2 Warning (JAFZA), 2 Info (YOTO).',
+      },
+    },
+    warehouses: {
+      YOTO: {
+        throughput: '18,500',
+        capacity: 78,
+        barClass: 'green',
+        sla: '96%',
+        bottleneck: 'Receiving',
+        status: 'Good',
+        statusClass: 'good',
+      },
+      JAFZA: {
+        throughput: '16,800',
+        capacity: 86,
+        barClass: 'orange',
+        sla: '91%',
+        bottleneck: 'Counting',
+        status: 'At Risk',
+        statusClass: 'at-risk',
+      },
+      TECHNO: {
+        throughput: '15,900',
+        capacity: 94,
+        barClass: 'red',
+        sla: '82%',
+        bottleneck: 'Robo Sorting',
+        status: 'Critical',
+        statusClass: 'critical',
+      },
+    },
+    bottlenecks: [
+      { name: 'Robo Sorting – TECHNO', pct: '94% ↑', color: '#dc2626' },
+      { name: 'Counting – JAFZA', pct: '86% ↑', color: '#d97706' },
+      { name: 'Receiving – YOTO', pct: '78% ↑', color: '#059669' },
+    ],
+    chart: {
+      yoto: '45,58 78,57 111,55 144,48 177,33 210,33 243,37 276,44 309,51 342,59 375,66 400,73',
+      jafza: '45,95 78,93 111,89 144,84 177,77 210,69 243,59 276,48 309,40 342,44 375,66 400,88',
+      techno: '45,124 78,122 111,118 144,113 177,106 210,98 243,91 276,84 309,80 342,84 375,91 400,102',
+      xLabels: ['12 AM', '4 AM', '8 AM', '12 PM', '4 PM', '8 PM'],
+    },
+    recommendation: {
+      title: "Today's Recommendation",
+      scenario: 'Scenario 2',
+      text: 'Hybrid model with <strong>+2 Robots</strong> and <strong>+2 Operators</strong> in TECHNO will increase throughput by <strong>18%</strong>, reduce <strong>waiting time</strong> by <strong>24%</strong> and improve <strong>SLA</strong> by <strong>5%</strong>.',
+      people: 468,
+      robots: 48,
+      alerts: 7,
+      simulations: 12,
+      peopleDetail: '468 people across all warehouses: YOTO 156, JAFZA 148, TECHNO 164',
+      robotsDetail: '48 robots total: YOTO 16, JAFZA 14, TECHNO 18 (2 offline)',
+      simsDetail: '12 simulations run today: 5 capacity, 4 routing, 3 staffing',
+    },
+  },
+  yesterday: {
+    kpis: {
+      throughput: {
+        value: '47,200',
+        unit: 'Units / Day',
+        trend: '↓ 3.8% vs Prior Day',
+        trendClass: 'down',
+        detail:
+          'Total Throughput: 47,200 units processed yesterday. YOTO: 17,200 | JAFZA: 15,400 | TECHNO: 14,600',
+      },
+      capacity: {
+        value: '83%',
+        trend: '↓ 2% vs Prior Day',
+        trendClass: 'down',
+        detail: 'Capacity Utilization: 83% network-wide. TECHNO peaked at 91% yesterday afternoon.',
+      },
+      sla: {
+        value: '89%',
+        trend: '↓ 1% vs Prior Day',
+        trendClass: 'down',
+        detail: 'SLA Achievement: 89% overall. TECHNO at 79% due to sustained Robo Sorting queue.',
+      },
+      bottlenecks: {
+        value: '4',
+        trend: '↑ 1 vs Prior Day',
+        trendClass: 'orange',
+        detail:
+          '4 active bottlenecks yesterday: Robo Sorting (TECHNO), Staging (JAFZA), Counting (JAFZA), Receiving (YOTO).',
+      },
+      alerts: {
+        value: '9',
+        detail: '9 open alerts yesterday: 4 Critical (TECHNO), 3 Warning (JAFZA), 2 Info (YOTO).',
+      },
+    },
+    warehouses: {
+      YOTO: {
+        throughput: '17,200',
+        capacity: 75,
+        barClass: 'green',
+        sla: '95%',
+        bottleneck: 'Receiving',
+        status: 'Good',
+        statusClass: 'good',
+      },
+      JAFZA: {
+        throughput: '15,400',
+        capacity: 82,
+        barClass: 'orange',
+        sla: '89%',
+        bottleneck: 'Staging',
+        status: 'At Risk',
+        statusClass: 'at-risk',
+      },
+      TECHNO: {
+        throughput: '14,600',
+        capacity: 91,
+        barClass: 'red',
+        sla: '79%',
+        bottleneck: 'Robo Sorting',
+        status: 'Critical',
+        statusClass: 'critical',
+      },
+    },
+    bottlenecks: [
+      { name: 'Robo Sorting – TECHNO', pct: '91% ↑', color: '#dc2626' },
+      { name: 'Staging – JAFZA', pct: '84% ↑', color: '#d97706' },
+      { name: 'Receiving – YOTO', pct: '75% ↑', color: '#059669' },
+    ],
+    chart: {
+      yoto: '45,68 78,66 111,62 144,58 177,52 210,48 243,50 276,55 309,60 342,65 375,70 400,74',
+      jafza: '45,102 78,98 111,94 144,88 177,82 210,76 243,70 276,62 309,55 342,58 375,72 400,92',
+      techno: '45,128 78,125 111,120 144,115 177,110 210,104 243,98 276,92 309,88 342,92 375,98 400,108',
+      xLabels: ['12 AM', '4 AM', '8 AM', '12 PM', '4 PM', '8 PM'],
+    },
+    recommendation: {
+      title: "Yesterday's Recommendation",
+      scenario: 'Scenario 1',
+      text: 'Adding <strong>+1 Robot</strong> and <strong>+3 Operators</strong> in TECHNO would have reduced queue by <strong>15%</strong> and improved <strong>SLA</strong> by <strong>3%</strong> for the prior day.',
+      people: 462,
+      robots: 46,
+      alerts: 9,
+      simulations: 8,
+      peopleDetail: '462 people on shift yesterday: YOTO 154, JAFZA 146, TECHNO 162',
+      robotsDetail: '46 robots active yesterday: YOTO 16, JAFZA 14, TECHNO 16 (3 offline)',
+      simsDetail: '8 simulations run yesterday: 3 capacity, 3 routing, 2 staffing',
+    },
+  },
+  last7: {
+    kpis: {
+      throughput: {
+        value: '358,400',
+        unit: 'Units / Week',
+        trend: '↑ 5.1% vs Prior Week',
+        trendClass: 'up',
+        detail:
+          'Total Throughput: 358,400 units over the last 7 days (avg 51,200/day). Best day: Wed 53,100 | Lowest: Sun 46,800',
+      },
+      capacity: {
+        value: '85%',
+        trend: '↑ 2% vs Prior Week',
+        trendClass: 'up',
+        detail: 'Capacity Utilization: 85% 7-day average. TECHNO averaged 92% with 2 critical days.',
+      },
+      sla: {
+        value: '90%',
+        trend: '↑ 1% vs Prior Week',
+        trendClass: 'up',
+        detail: 'SLA Achievement: 90% weekly average. TECHNO averaged 80% across the week.',
+      },
+      bottlenecks: {
+        value: '3',
+        trend: '→ Same as Prior Week',
+        trendClass: 'orange',
+        detail:
+          '3 recurring bottlenecks this week: Robo Sorting (TECHNO), Counting (JAFZA), Receiving (YOTO).',
+      },
+      alerts: {
+        value: '5',
+        detail: '5 average daily alerts over 7 days: 18 Critical, 12 Warning, 7 Info total.',
+      },
+    },
+    warehouses: {
+      YOTO: {
+        throughput: '126,500',
+        capacity: 77,
+        barClass: 'green',
+        sla: '95%',
+        bottleneck: 'Receiving',
+        status: 'Good',
+        statusClass: 'good',
+      },
+      JAFZA: {
+        throughput: '115,200',
+        capacity: 84,
+        barClass: 'orange',
+        sla: '90%',
+        bottleneck: 'Counting',
+        status: 'At Risk',
+        statusClass: 'at-risk',
+      },
+      TECHNO: {
+        throughput: '116,700',
+        capacity: 92,
+        barClass: 'red',
+        sla: '81%',
+        bottleneck: 'Robo Sorting',
+        status: 'Critical',
+        statusClass: 'critical',
+      },
+    },
+    bottlenecks: [
+      { name: 'Robo Sorting – TECHNO', pct: '92% avg', color: '#dc2626' },
+      { name: 'Counting – JAFZA', pct: '83% avg', color: '#d97706' },
+      { name: 'Receiving – YOTO', pct: '76% avg', color: '#059669' },
+    ],
+    chart: {
+      yoto: '45,70 111,62 177,48 243,40 309,52 375,68',
+      jafza: '45,100 111,88 177,72 243,55 309,42 375,75',
+      techno: '45,130 111,118 177,100 243,85 309,78 375,95',
+      xLabels: ['Mon', 'Wed', 'Fri', 'Sun', 'Tue', 'Thu'],
+    },
+    recommendation: {
+      title: 'Weekly Recommendation',
+      scenario: 'Scenario 3',
+      text: '7-day analysis shows <strong>Hybrid staffing</strong> in TECHNO delivers best results: <strong>+12% throughput</strong>, <strong>-18% wait time</strong>, and <strong>+4% SLA</strong> vs current week average.',
+      people: 471,
+      robots: 49,
+      alerts: 5,
+      simulations: 34,
+      peopleDetail: '471 avg weekly headcount: YOTO 157, JAFZA 149, TECHNO 165',
+      robotsDetail: '49 robots deployed this week: YOTO 16, JAFZA 15, TECHNO 18',
+      simsDetail: '34 simulations run this week: 14 capacity, 12 routing, 8 staffing',
+    },
+  },
+};

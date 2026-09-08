@@ -1,6 +1,6 @@
 # Supply Chain Intelligence
 
-Next.js (App Router) + TypeScript enterprise dashboard for **End to End Item Trace**.
+Next.js (Pages Router) + JavaScript dashboard for warehouse operations and **End to End Item Trace**.
 
 ## Run
 
@@ -9,9 +9,15 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The app redirects to `/item-trace`.
+Open [http://localhost:3000](http://localhost:3000). Sign in first, then the app opens the role’s default page.
 
-Search `PO123456` to load the sample journey.
+Demo accounts:
+
+- `executive` / `Executive@123` → Control Tower
+- `operations` / `Operations@123` → Operations
+- `warehouse` / `Warehouse@123` → Process Details
+
+On **End to End Item Trace**, search `PO123456` to load the sample journey.
 
 ## Scripts
 
