@@ -1,4 +1,4 @@
-# Supply Chain Intelligence
+# BFL Supply Chain Intelligence
 
 Next.js (Pages Router) + JavaScript dashboard for warehouse operations and **End to End Item Trace**.
 
