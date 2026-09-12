@@ -1,0 +1,357 @@
+.sim-page .page-body {
+  gap: 14px;
+}
+
+.sim-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #fff8eb;
+  border: 1px solid #f3e0b8;
+  border-radius: 12px;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.sim-poc {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid #e8c56b;
+  color: #8a5a00;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.sim-presets {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.sim-preset {
+  text-align: left;
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: var(--shadow);
+}
+
+.sim-preset__name {
+  display: block;
+  font-weight: 700;
+  font-size: 13.5px;
+}
+
+.sim-preset__meta {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.sim-preset.is-active {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(47, 128, 237, 0.16);
+}
+
+.sim-preset.is-best:not(.is-active) {
+  border-color: #9fd4bb;
+}
+
+.sim-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.sim-builder,
+.sim-player,
+.sim-table-card,
+.sim-formula,
+.sim-compare {
+  padding: 16px;
+}
+
+.sim-builder__head,
+.sim-player__bar,
+.sim-table-meta,
+.sim-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sim-name {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.sim-name input {
+  height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0 10px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.sim-knobs {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 14px 0;
+}
+
+.sim-knob {
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f1f3f6;
+}
+
+.sim-knob__top,
+.sim-knob__values {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.sim-knob__top strong {
+  font-size: 13px;
+}
+
+.sim-knob__top span,
+.sim-knob__values .muted {
+  color: var(--text-secondary);
+}
+
+.sim-knob__new {
+  font-weight: 700;
+  color: var(--blue);
+}
+
+.sim-knob input[type='range'],
+.sim-scrub {
+  width: 100%;
+  margin-top: 8px;
+  accent-color: var(--blue);
+}
+
+.sim-knob__hint {
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 11.5px;
+}
+
+.sim-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #fdecec;
+  color: var(--red);
+  font-size: 12.5px;
+  margin-bottom: 10px;
+}
+
+.sim-run {
+  width: 100%;
+  justify-content: center;
+}
+
+.sim-player__kicker {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sim-player h3 {
+  font-size: 18px;
+  margin-top: 2px;
+}
+
+.sim-controls {
+  margin-top: 12px;
+}
+
+.sim-speed {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.sim-speed select {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-weight: 700;
+}
+
+.sim-clock {
+  margin-left: auto;
+  font-size: 18px;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.sim-flow {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.sim-station {
+  position: relative;
+  min-height: 118px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #f8fafc;
+  padding: 8px 8px 10px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.sim-station__bar {
+  position: absolute;
+  right: 6px;
+  bottom: 8px;
+  top: 36px;
+  width: 7px;
+  border-radius: 99px;
+  background: #e5eaf1;
+  overflow: hidden;
+}
+
+.sim-station__bar span {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: currentColor;
+  opacity: 0.85;
+}
+
+.sim-station__name {
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.25;
+  padding-right: 10px;
+}
+
+.sim-station__status {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.sim-station__queue {
+  margin-top: auto;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.sim-station--green { color: var(--green); }
+.sim-station--amber { color: var(--amber); background: #fff8ef; }
+.sim-station--red {
+  color: var(--red);
+  background: #fff5f5;
+  border-color: #f3c1c1;
+}
+.sim-station.is-selected {
+  box-shadow: inset 0 0 0 2px var(--blue);
+}
+
+.sim-station__status--green { color: var(--green); }
+.sim-station__status--amber { color: var(--amber); }
+.sim-station__status--red { color: var(--red); }
+
+.sim-kpis {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.sim-table-meta {
+  margin-bottom: 10px;
+  color: var(--text-secondary);
+  font-size: 12.5px;
+}
+
+.sim-spark {
+  width: 160px;
+  height: 28px;
+  vertical-align: middle;
+  margin-left: 8px;
+}
+
+.sim-row--red td {
+  background: #fff6f6;
+}
+
+.sim-row--best td {
+  background: #f3fbf7;
+}
+
+.sim-row--worst td:nth-child(3) {
+  color: var(--red);
+  font-weight: 700;
+}
+
+.sim-bottom {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.2fr);
+  gap: 14px;
+}
+
+.sim-footnote {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+@media (max-width: 1280px) {
+  .sim-presets,
+  .sim-kpis,
+  .sim-flow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sim-layout,
+  .sim-bottom {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .sim-presets,
+  .sim-kpis,
+  .sim-flow {
+    grid-template-columns: 1fr;
+  }
+}

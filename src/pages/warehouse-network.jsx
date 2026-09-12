@@ -1,16 +1,13 @@
 import Head from 'next/head'
-import { PlaceholderPage } from '@/components/pages/PlaceholderPage'
+import { WarehouseNetworkPage } from '@/components/network/WarehouseNetworkPage'
 
-export default function WarehouseNetworkPage() {
+export default function WarehouseNetworkRoute() {
   return (
     <>
       <Head>
         <title>Warehouse Network | BFL Digital Twin</title>
       </Head>
-      <PlaceholderPage
-        title="Warehouse Network"
-        description="Warehouse topology and capacity views will appear here."
-      />
+      <WarehouseNetworkPage />
     </>
   )
 }

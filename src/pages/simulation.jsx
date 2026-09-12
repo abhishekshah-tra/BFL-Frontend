@@ -1,16 +1,13 @@
 import Head from 'next/head'
-import { PlaceholderPage } from '@/components/pages/PlaceholderPage'
+import { SimulationPage } from '@/components/simulation/SimulationPage'
 
-export default function SimulationPage() {
+export default function SimulationRoute() {
   return (
     <>
       <Head>
-        <title>Simulation & Scenarios | BFL Digital Twin</title>
+        <title>Simulation | BFL Digital Twin</title>
       </Head>
-      <PlaceholderPage
-        title="Simulation & Scenarios"
-        description="What-if scenarios will appear here."
-      />
+      <SimulationPage />
     </>
   )
 }

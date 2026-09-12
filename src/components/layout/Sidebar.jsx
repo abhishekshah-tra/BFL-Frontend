@@ -9,13 +9,14 @@ import {
   ClipboardList,
   FlaskConical,
   Cog,
-  GitFork,
   Home,
+  Layers,
   Network,
   Settings,
   TowerControl,
   Workflow
 } from "lucide-react";
+import { BflMark } from "../brand/BflLogo";
 import { APP_NAME, HELP_ITEM, NAV_ITEMS } from "../../constants/navigation";
 const ICONS = {
   home: Home,
@@ -26,6 +27,7 @@ const ICONS = {
   cog: Cog,
   process: ClipboardList,
   flask: FlaskConical,
+  layers: Layers,
   chart: BarChart3,
   bell: Bell,
   settings: Settings,
@@ -38,10 +40,11 @@ function Sidebar({ collapsed, mobileOpen, onNavigate }) {
     aria-label="Primary"
   >
       <div className="sidebar__brand">
-        <span className="brand-mark" aria-hidden="true">
-          <GitFork size={16} />
+        <BflMark />
+        <span className="sidebar__brand-copy">
+          <span className="sidebar__brand-text">{APP_NAME}</span>
+          <span className="sidebar__brand-sub">Digital Twin</span>
         </span>
-        <span className="sidebar__brand-text">{APP_NAME}</span>
       </div>
 
       <nav className="sidebar__nav">

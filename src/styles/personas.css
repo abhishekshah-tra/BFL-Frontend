@@ -205,7 +205,7 @@
       letter-spacing: 0.3px;
       text-align: center;
     }
-    .bfl-personas .page-banner.blue { background: #2563eb; }
+    .bfl-personas .page-banner.blue { background: #111111; }
     .bfl-personas .page-banner.green { background: #059669; }
     .bfl-personas .page-banner.orange { background: #ea580c; }
 
@@ -919,7 +919,7 @@
       cursor: pointer;
       border: none;
     }
-    .bfl-personas .modal-btn.primary { background: #2563eb; color: #fff; }
+    .bfl-personas .modal-btn.primary { background: #111111; color: #ffd100; }
     .bfl-personas .modal-btn.secondary { background: #f3f4f6; color: #374151; }
 
     /* Toast */
@@ -947,80 +947,147 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, #0b1a30 0%, #1e3a5f 50%, #0b1a30 100%);
-      padding: 24px;
+      background: #f4f5f8;
+      padding: 40px 24px;
     }
     .bfl-personas #login-screen.hidden { display: none; }
+    .bfl-personas .login-shell {
+      width: 100%;
+      max-width: 1080px;
+      display: grid;
+      grid-template-columns: minmax(280px, 1fr) minmax(340px, 440px);
+      gap: 64px;
+      align-items: center;
+    }
+    .bfl-personas .login-brand .bfl-wordmark {
+      display: block;
+      width: min(168px, 100%);
+      height: auto;
+      margin: 0 0 36px;
+    }
+    .bfl-personas .login-brand h1 {
+      margin: 0 0 16px;
+      font-size: clamp(32px, 4vw, 44px);
+      line-height: 1.08;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      text-transform: uppercase;
+      color: #111827;
+    }
+    .bfl-personas .login-lead {
+      margin: 0 0 36px;
+      max-width: 420px;
+      font-size: 15px;
+      line-height: 1.55;
+      color: #6b7280;
+    }
+    .bfl-personas .login-features {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+    .bfl-personas .login-features li {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .bfl-personas .login-feature-icon {
+      flex: 0 0 auto;
+      width: 28px;
+      height: 28px;
+      color: #111827;
+      margin-top: 2px;
+    }
+    .bfl-personas .login-feature-icon svg {
+      width: 100%;
+      height: 100%;
+    }
+    .bfl-personas .login-features strong {
+      display: block;
+      font-size: 15px;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 2px;
+    }
+    .bfl-personas .login-features span {
+      display: block;
+      font-size: 13px;
+      color: #6b7280;
+      line-height: 1.45;
+    }
     .bfl-personas .login-card {
       background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      border-radius: 20px;
+      box-shadow: 0 18px 50px rgba(17, 24, 39, 0.1);
       width: 100%;
-      max-width: 420px;
-      overflow: hidden;
+      padding: 36px 32px 28px;
     }
-    .bfl-personas .login-header {
-      background: #0b1a30;
-      padding: 32px 32px 28px;
-      text-align: center;
-    }
-    .bfl-personas .login-logo {
-      font-size: 42px;
-      font-weight: 700;
-      font-style: italic;
-      color: #fff;
-      letter-spacing: 2px;
-      margin-bottom: 8px;
-    }
-    .bfl-personas .login-subtitle {
-      color: #94a3b8;
-      font-size: 13px;
-    }
-    .bfl-personas .login-body { padding: 28px 32px 32px; }
-    .bfl-personas .login-body h2 {
-      font-size: 18px;
-      font-weight: 700;
-      color: #0b1a30;
-      margin-bottom: 4px;
-    }
-    .bfl-personas .login-body .login-desc {
-      font-size: 12px;
-      color: #6b7280;
-      margin-bottom: 24px;
-    }
-    .bfl-personas .form-group { margin-bottom: 16px; }
-    .bfl-personas .form-group label {
+    .bfl-personas .bfl-wordmark {
       display: block;
-      font-size: 12px;
+      width: min(280px, 100%);
+      height: auto;
+    }
+    .bfl-personas .login-card h2 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #111827;
+      margin: 0 0 24px;
+    }
+    .bfl-personas .login-field {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+      padding: 10px 14px;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      background: #f8fafc;
+      transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+    }
+    .bfl-personas .login-field.filled,
+    .bfl-personas .login-field:focus-within {
+      background: #eef4ff;
+      border-color: #c7d7f5;
+    }
+    .bfl-personas .login-field-icon {
+      flex: 0 0 auto;
+      width: 18px;
+      height: 18px;
+      color: #64748b;
+    }
+    .bfl-personas .login-field-icon svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .bfl-personas .login-field-body {
+      flex: 1;
+      min-width: 0;
+    }
+    .bfl-personas .login-field label {
+      display: block;
+      font-size: 11px;
       font-weight: 600;
-      color: #374151;
-      margin-bottom: 6px;
+      color: #94a3b8;
+      margin-bottom: 1px;
     }
     .bfl-personas .form-input {
       width: 100%;
-      padding: 10px 12px;
-      border: 1px solid #d1d5db;
-      border-radius: 8px;
+      padding: 0;
+      border: none;
+      background: transparent;
       font-size: 14px;
       font-family: inherit;
-      transition: border-color 0.15s, box-shadow 0.15s;
+      color: #111827;
     }
-    .bfl-personas .form-input:focus {
-      outline: none;
-      border-color: #2563eb;
-      box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
-    }
-    .bfl-personas .password-input-wrap {
-      position: relative;
-    }
-    .bfl-personas .password-input-wrap .form-input {
-      padding-right: 42px;
-    }
+    .bfl-personas .form-input::placeholder { color: #94a3b8; }
+    .bfl-personas .form-input:focus { outline: none; }
     .bfl-personas .password-toggle {
-      position: absolute;
-      top: 50%;
-      right: 10px;
-      transform: translateY(-50%);
+      flex: 0 0 auto;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1029,15 +1096,11 @@
       padding: 0;
       border: none;
       background: none;
-      color: #6b7280;
+      color: #64748b;
       cursor: pointer;
       border-radius: 6px;
-      transition: color 0.15s, background 0.15s;
     }
-    .bfl-personas .password-toggle:hover {
-      color: #2563eb;
-      background: #eff6ff;
-    }
+    .bfl-personas .password-toggle:hover { color: #111827; }
     .bfl-personas .password-toggle svg {
       width: 18px;
       height: 18px;
@@ -1059,23 +1122,24 @@
     .bfl-personas .login-error.show { display: block; }
     .bfl-personas .btn-login {
       width: 100%;
-      padding: 12px;
-      background: #2563eb;
+      margin-top: 10px;
+      padding: 14px;
+      background: #1e1b4b;
       color: #fff;
       border: none;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 600;
+      border-radius: 999px;
+      font-size: 15px;
+      font-weight: 700;
       cursor: pointer;
-      transition: background 0.15s;
+      transition: background 0.15s, transform 0.15s;
       font-family: inherit;
     }
-    .bfl-personas .btn-login:hover { background: #1d4ed8; }
-    .bfl-personas .btn-login:disabled { background: #93c5fd; cursor: not-allowed; }
+    .bfl-personas .btn-login:hover { background: #312e81; }
+    .bfl-personas .btn-login:disabled { background: #a5b4fc; cursor: not-allowed; }
     .bfl-personas .demo-users {
-      margin-top: 24px;
-      padding-top: 20px;
-      border-top: 1px solid #e5e7eb;
+      margin-top: 22px;
+      padding-top: 16px;
+      border-top: 1px solid #eef0f4;
     }
     .bfl-personas .demo-users-title {
       font-size: 11px;
@@ -1091,16 +1155,26 @@
       align-items: center;
       padding: 8px 10px;
       background: #f9fafb;
-      border-radius: 6px;
+      border-radius: 8px;
       margin-bottom: 6px;
       font-size: 11px;
       cursor: pointer;
       transition: background 0.15s;
       border: 1px solid transparent;
     }
-    .bfl-personas .demo-user-row:hover { background: #eff6ff; border-color: #bfdbfe; }
+    .bfl-personas .demo-user-row:hover { background: #eef4ff; border-color: #c7d7f5; }
     .bfl-personas .demo-user-row .role-name { font-weight: 600; color: #374151; }
     .bfl-personas .demo-user-row .creds { color: #6b7280; font-family: monospace; font-size: 10px; }
+
+    @media (max-width: 900px) {
+      .bfl-personas .login-shell {
+        grid-template-columns: 1fr;
+        gap: 32px;
+        max-width: 460px;
+      }
+      .bfl-personas .login-brand h1 { font-size: 32px; }
+      .bfl-personas .login-features { display: none; }
+    }
 
     /* ===== DASHBOARD (post-login) ===== */
     .bfl-personas #app-dashboard { display: none; }
