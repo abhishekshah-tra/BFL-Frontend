@@ -24,9 +24,16 @@ export const NAV_ITEMS = [
   },
   {
     id: 'simulation',
-    label: 'Simulation & Scenarios',
+    label: 'Simulation',
     path: '/simulation',
     icon: 'flask',
+  },
+  {
+    id: 'scenarios',
+    label: 'Scenarios',
+    path: '/scenarios',
+    icon: 'layers',
+    indent: true,
   },
   {
     id: 'analytics',
@@ -50,7 +57,7 @@ export const HELP_ITEM = {
   icon: 'help',
 }
 
-export const APP_NAME = 'BFL Digital Twin'
+export const APP_NAME = 'BFL Group'
 export const PAGE_TITLE = 'End to End Item Trace'
 export const PAGE_SUBTITLE =
   "Real-time visibility of an item's journey across the supply chain and warehouse network"
