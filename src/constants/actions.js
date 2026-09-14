@@ -1,0 +1,21 @@
+export const ACTION_CODES = {
+  VIEW: 'VIEW',
+  CREATE: 'CREATE',
+  UPDATE: 'UPDATE',
+  DELETE: 'DELETE',
+  EXPORT: 'EXPORT',
+  IMPORT: 'IMPORT',
+  APPROVE: 'APPROVE',
+  REJECT: 'REJECT',
+};
+
+export const ACTION_LIST = [
+  'VIEW',
+  'CREATE',
+  'UPDATE',
+  'DELETE',
+  'EXPORT',
+  'IMPORT',
+  'APPROVE',
+  'REJECT',
+];

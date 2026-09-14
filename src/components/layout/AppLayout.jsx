@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
 import { LayoutProvider } from './LayoutContext'
-import { Sidebar } from './Sidebar'
+import { Sidebar } from './Sidebar_old'
 
 export function AppLayout({ children }) {
   const isDesktop = useMediaQuery('(min-width: 1100px)')
