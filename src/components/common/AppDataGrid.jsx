@@ -1,10 +1,7 @@
 'use client';
 
 import Box from '@mui/material/Box';
-import {
-  DataGrid,
-  GridToolbar,
-} from '@mui/x-data-grid';
+import { DataGrid, GridToolbar } from '@mui/x-data-grid';
 
 export default function AppDataGrid({
   rows,
@@ -16,8 +13,6 @@ export default function AppDataGrid({
       sx={{
         width: '100%',
         backgroundColor: '#fff',
-        borderRadius: 2,
-        overflow: 'hidden',
       }}
     >
       <DataGrid
@@ -42,17 +37,38 @@ export default function AppDataGrid({
         sx={{
           border: 0,
 
+          '& .MuiDataGrid-toolbarContainer': {
+            padding: '12px 16px',
+            borderBottom: '1px solid #edf0f2',
+            gap: 1,
+          },
+
           '& .MuiDataGrid-columnHeaders': {
-            backgroundColor: '#f8f9fa',
+            backgroundColor: '#f8f9fb',
+            borderBottom: '1px solid #e5e7eb',
+          },
+
+          '& .MuiDataGrid-columnHeaderTitle': {
             fontWeight: 600,
+            fontSize: '0.85rem',
+            color: '#343a40',
           },
 
           '& .MuiDataGrid-cell': {
-            borderColor: '#edf0f2',
+            borderColor: '#f0f1f3',
+            fontSize: '0.875rem',
           },
 
           '& .MuiDataGrid-row:hover': {
             backgroundColor: '#fafbfc',
+          },
+
+          '& .MuiDataGrid-footerContainer': {
+            borderTop: '1px solid #edf0f2',
+          },
+
+          '& .MuiDataGrid-columnSeparator': {
+            display: 'none',
           },
         }}
       />

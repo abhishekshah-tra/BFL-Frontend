@@ -8,27 +8,65 @@ export default function PageHeader({
   description,
   buttonText,
   onAdd,
+  icon = <AddIcon />,
 }) {
   return (
-    <div className="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
-      <div>
-        <h5 className="mb-1 fw-semibold">{title}</h5>
+    <div className="row align-items-center g-3 mb-4">
+      {/* Page title */}
+      <div className="col-12 col-md">
+        <div className="d-flex align-items-center gap-3">
+          <div
+            className="d-flex align-items-center justify-content-center flex-shrink-0"
+            style={{
+              width: 46,
+              height: 46,
+              borderRadius: 10,
+              backgroundColor: '#eeecf8',
+              color: '#1E1450',
+            }}
+          >
+            {icon}
+          </div>
 
-        {description && (
-          <p className="text-muted mb-0 small">
-            {description}
-          </p>
-        )}
+          <div>
+            <h4
+              className="mb-1 fw-semibold"
+              style={{ color: '#1E1450' }}
+            >
+              {title}
+            </h4>
+
+            {description && (
+              <p className="mb-0 text-muted small">
+                {description}
+              </p>
+            )}
+          </div>
+        </div>
       </div>
 
+      {/* Action */}
       {buttonText && (
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={onAdd}
-        >
-          {buttonText}
-        </Button>
+        <div className="col-12 col-md-auto">
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={onAdd}
+            fullWidth
+            sx={{
+              minWidth: {
+                xs: '100%',
+                sm: 140,
+              },
+              height: 42,
+              borderRadius: '8px',
+              textTransform: 'none',
+              fontWeight: 600,
+            }}
+          >
+            {buttonText}
+          </Button>
+        </div>
       )}
     </div>
   );

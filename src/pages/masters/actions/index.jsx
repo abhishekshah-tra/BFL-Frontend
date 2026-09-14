@@ -173,20 +173,54 @@ export default function ActionsPage() {
     },
   ];
 
+
   return (
-    <>
+    <div className="container-fluid px-0">
+
       <PageHeader
         title="Actions"
-        description="Manage system actions"
+        description="Manage system actions and permissions"
         buttonText="Add Action"
         onAdd={handleAdd}
       />
 
-      <AppDataGrid
-        rows={rows}
-        columns={columns}
-        loading={loading}
-      />
+      <div className="row">
+        <div className="col-12">
+
+          <div
+            className="bg-white rounded-3 shadow-sm border"
+            style={{
+              borderColor: '#e9ecef',
+              overflow: 'hidden',
+            }}
+          >
+            <div className="p-3 p-md-4 border-bottom">
+              <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+                <div>
+                  <h6 className="mb-1 fw-semibold">
+                    System Actions
+                  </h6>
+
+                  <p className="mb-0 text-muted small">
+                    Configure actions available across the application
+                  </p>
+                </div>
+
+                <span className="text-muted small">
+                  {rows.length} {rows.length === 1 ? 'action' : 'actions'}
+                </span>
+              </div>
+            </div>
+
+            <AppDataGrid
+              rows={rows}
+              columns={columns}
+              loading={loading}
+            />
+          </div>
+
+        </div>
+      </div>
 
       <AppDialog
         open={dialogOpen}
@@ -205,6 +239,7 @@ export default function ActionsPage() {
             : 'Save'
         }
         loading={saving}
+        hideSubmit={mode === 'view'}
       >
         <ActionForm
           form={form}
@@ -220,6 +255,8 @@ export default function ActionsPage() {
         loading={saving}
         message={`Are you sure you want to delete "${selectedRow?.name}"?`}
       />
-    </>
+
+    </div>
   );
+
 }

@@ -1,6 +1,7 @@
 import Head from 'next/head'
 import { Inter } from 'next/font/google'
 import { AuthGate } from '@/components/auth/AuthGate'
+import 'bootstrap/dist/css/bootstrap.min.css';
 import '@/styles/globals.css'
 import '@/styles/personas.css'
 import '@/styles/warehouse-network.css'
