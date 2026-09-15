@@ -21,20 +21,40 @@ export default function ConfirmDialog({
       onClose={loading ? undefined : onClose}
       maxWidth="xs"
       fullWidth
+      PaperProps={{
+        sx: { borderRadius: '14px' },
+      }}
     >
-      <DialogTitle>{title}</DialogTitle>
+      <DialogTitle
+        sx={{
+          fontWeight: 600,
+          color: '#1E1450',
+          borderBottom: '1px solid #eef0f5',
+          py: 2,
+          px: 3,
+        }}
+      >
+        {title}
+      </DialogTitle>
 
-      <DialogContent>
+      <DialogContent sx={{ px: 3, py: 3 }}>
         <Typography variant="body2">
           {message}
         </Typography>
       </DialogContent>
 
-      <DialogActions>
+      <DialogActions
+        sx={{
+          borderTop: '1px solid #eef0f5',
+          px: 3,
+          py: 2,
+        }}
+      >
         <Button
           onClick={onClose}
           disabled={loading}
           color="inherit"
+          sx={{ fontWeight: 600 }}
         >
           Cancel
         </Button>
@@ -44,6 +64,7 @@ export default function ConfirmDialog({
           variant="contained"
           onClick={onConfirm}
           disabled={loading}
+          sx={{ fontWeight: 600, minWidth: 110 }}
         >
           {loading ? 'Deleting...' : 'Delete'}
         </Button>

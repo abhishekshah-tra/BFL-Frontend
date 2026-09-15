@@ -3,14 +3,23 @@
 import { useEffect, useState } from 'react';
 import Button from '@mui/material/Button';
 import AddIcon from '@mui/icons-material/Add';
+
 import AppDataGrid from '@/components/common/AppDataGrid';
 import AppDialog from '@/components/common/AppDialog';
 import ConfirmDialog from '@/components/common/ConfirmDialog';
 import StatusChip from '@/components/common/StatusChip';
 import RowActions from '@/components/common/RowActions';
+import { Header } from '@/components/layout/Header';
+import { useLayout } from '@/components/layout/LayoutContext';
+
 import ActionForm from './ActionForm';
-import { getActions, createAction, updateAction, deleteAction, } from '@/services/action.service';
-import PageHeader from '@/components/common/PageHeader';
+
+import {
+  getActions,
+  createAction,
+  updateAction,
+  deleteAction,
+} from '@/services/action.service';
 
 const emptyForm = {
   name: '',
@@ -20,9 +29,12 @@ const emptyForm = {
 };
 
 export default function ActionsPage() {
+  const { onMenuClick } = useLayout();
+
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(() => new Date());
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -43,6 +55,8 @@ export default function ActionsPage() {
           ? data
           : data?.data || [],
       );
+
+      setLastUpdated(new Date());
     } catch (error) {
       console.error(error);
     } finally {
@@ -173,53 +187,40 @@ export default function ActionsPage() {
     },
   ];
 
-
   return (
-    <div className="container-fluid px-0">
-
-      <PageHeader
+    <div className="page">
+      <Header
+        onMenuClick={onMenuClick}
         title="Actions"
-        description="Manage system actions and permissions"
-        buttonText="Add Action"
-        onAdd={handleAdd}
+        subtitle="Manage system actions and permissions"
+        lastUpdated={lastUpdated}
+        isRefreshing={loading}
+        onRefresh={loadActions}
       />
 
-      <div className="row">
-        <div className="col-12">
-
-          <div
-            className="bg-white rounded-3 shadow-sm border"
-            style={{
-              borderColor: '#e9ecef',
-              overflow: 'hidden',
+      <div className="page-body">
+        <div className="d-flex justify-content-end">
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleAdd}
+            sx={{
+              minWidth: 140,
+              height: 42,
+              borderRadius: '8px',
+              textTransform: 'none',
+              fontWeight: 600,
             }}
           >
-            <div className="p-3 p-md-4 border-bottom">
-              <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
-                <div>
-                  <h6 className="mb-1 fw-semibold">
-                    System Actions
-                  </h6>
-
-                  <p className="mb-0 text-muted small">
-                    Configure actions available across the application
-                  </p>
-                </div>
-
-                <span className="text-muted small">
-                  {rows.length} {rows.length === 1 ? 'action' : 'actions'}
-                </span>
-              </div>
-            </div>
-
-            <AppDataGrid
-              rows={rows}
-              columns={columns}
-              loading={loading}
-            />
-          </div>
-
+            Add Action
+          </Button>
         </div>
+
+        <AppDataGrid
+          rows={rows}
+          columns={columns}
+          loading={loading}
+        />
       </div>
 
       <AppDialog
@@ -255,8 +256,6 @@ export default function ActionsPage() {
         loading={saving}
         message={`Are you sure you want to delete "${selectedRow?.name}"?`}
       />
-
     </div>
   );
-
 }

@@ -1,13 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Button from '@mui/material/Button';
+import AddIcon from '@mui/icons-material/Add';
 
 import AppDataGrid from '@/components/common/AppDataGrid';
 import AppDialog from '@/components/common/AppDialog';
 import ConfirmDialog from '@/components/common/ConfirmDialog';
 import StatusChip from '@/components/common/StatusChip';
 import RowActions from '@/components/common/RowActions';
-import PageHeader from '@/components/common/PageHeader';
+import { Header } from '@/components/layout/Header';
+import { useLayout } from '@/components/layout/LayoutContext';
 
 import RoleForm from './RoleForm';
 
@@ -27,9 +30,12 @@ const emptyForm = {
 };
 
 export default function RolesPage() {
+  const { onMenuClick } = useLayout();
+
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(() => new Date());
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -50,6 +56,8 @@ export default function RolesPage() {
           ? data
           : data?.data || [],
       );
+
+      setLastUpdated(new Date());
     } catch (error) {
       console.error(error);
     } finally {
@@ -202,19 +210,40 @@ export default function RolesPage() {
   ];
 
   return (
-    <>
-      <PageHeader
+    <div className="page">
+      <Header
+        onMenuClick={onMenuClick}
         title="Roles"
-        description="Manage system roles"
-        buttonText="Add Role"
-        onAdd={handleAdd}
+        subtitle="Manage system roles"
+        lastUpdated={lastUpdated}
+        isRefreshing={loading}
+        onRefresh={loadRoles}
       />
 
-      <AppDataGrid
-        rows={rows}
-        columns={columns}
-        loading={loading}
-      />
+      <div className="page-body">
+        <div className="d-flex justify-content-end">
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleAdd}
+            sx={{
+              minWidth: 140,
+              height: 42,
+              borderRadius: '8px',
+              textTransform: 'none',
+              fontWeight: 600,
+            }}
+          >
+            Add Role
+          </Button>
+        </div>
+
+        <AppDataGrid
+          rows={rows}
+          columns={columns}
+          loading={loading}
+        />
+      </div>
 
       <AppDialog
         open={dialogOpen}
@@ -249,6 +278,6 @@ export default function RolesPage() {
         loading={saving}
         message={`Are you sure you want to delete "${selectedRow?.name}"?`}
       />
-    </>
+    </div>
   );
 }

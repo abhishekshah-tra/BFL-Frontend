@@ -54,7 +54,7 @@ export default function ActionForm({
         />
       </div>
 
-      <div className="col-12">
+        <div className="col-12 col-md-6">
         <CommonSwitch
           label="Active"
           name="isActive"
