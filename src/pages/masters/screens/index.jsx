@@ -223,12 +223,12 @@ export default function ScreensPage() {
             flex: 1,
             minWidth: 180,
         },
-        {
-            field: 'description',
-            headerName: 'Description',
-            flex: 2,
-            minWidth: 220,
-        },
+        // {
+        //     field: 'description',
+        //     headerName: 'Description',
+        //     flex: 2,
+        //     minWidth: 220,
+        // },
         {
             field: 'isActive',
             headerName: 'Status',
