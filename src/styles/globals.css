@@ -224,6 +224,42 @@ p {
   gap: 4px;
   padding: 8px 10px;
   flex: 1;
+  overflow-y: auto;
+}
+
+.sidebar__group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar__group-toggle {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.sidebar__group-toggle.is-current {
+  color: #fff;
+}
+
+.sidebar__chevron {
+  margin-left: auto;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.sidebar__chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.sidebar__children {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .sidebar__footer {
@@ -267,7 +303,9 @@ p {
 }
 
 .sidebar.is-collapsed .sidebar__brand-copy,
-.sidebar.is-collapsed .sidebar__link span {
+.sidebar.is-collapsed .sidebar__brand-text,
+.sidebar.is-collapsed .sidebar__link span,
+.sidebar.is-collapsed .sidebar__chevron {
   display: none;
 }
 

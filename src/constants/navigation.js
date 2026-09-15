@@ -47,6 +47,31 @@ export const NAV_ITEMS = [
     path: '/alerts',
     icon: 'bell',
   },
+  {
+    id: 'masters',
+    label: 'Masters',
+    icon: 'database',
+    children: [
+      {
+        id: 'menus',
+        label: 'Menu',
+        path: '/masters/menus',
+        icon: 'menu',
+      },
+      {
+        id: 'screens',
+        label: 'Screen',
+        path: '/masters/screens',
+        icon: 'screen',
+      },
+      {
+        id: 'actions',
+        label: 'Action',
+        path: '/masters/actions',
+        icon: 'action',
+      },
+    ],
+  },
   { id: 'settings', label: 'Settings', path: '/settings', icon: 'settings' },
 ]
 
