@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { Bell, LogOut, Menu, RefreshCw } from "lucide-react";
+import { Bell, LogOut, Menu, Moon, RefreshCw, Sun } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useThemeMode } from "@/components/common/ThemeProvider";
 import { getInitials } from "@/lib/auth";
 import { PAGE_SUBTITLE, PAGE_TITLE } from "../../constants/navigation";
 import { formatLastUpdated } from "../../utils/format";
@@ -14,6 +15,7 @@ function Header({
   subtitle = PAGE_SUBTITLE
 }) {
   const { session, logout } = useAuth();
+  const { mode, toggleMode } = useThemeMode();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
   useEffect(() => {
@@ -62,6 +64,14 @@ function Header({
             <RefreshCw size={16} className={isRefreshing ? "is-spinning" : ""} />
           </button>
         </div>
+        <button
+    type="button"
+    className="icon-btn"
+    onClick={toggleMode}
+    aria-label="Toggle theme"
+  >
+          {mode === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
         <button type="button" className="icon-btn" aria-label="Notifications">
           <Bell size={18} />
           <span className="notif-dot" aria-hidden="true" />

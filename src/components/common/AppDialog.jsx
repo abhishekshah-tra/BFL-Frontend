@@ -24,8 +24,14 @@ export default function AppDialog({
       onClose={loading ? undefined : onClose}
       fullWidth
       maxWidth="sm"
-      PaperProps={{
-        sx: { borderRadius: '14px' },
+      slotProps={{
+        paper: {
+          sx: {
+            borderRadius: '14px',
+            backgroundColor: 'var(--card-bg)',
+            backgroundImage: 'none',
+          },
+        },
       }}
     >
       <DialogTitle
@@ -34,8 +40,8 @@ export default function AppDialog({
           alignItems: 'center',
           justifyContent: 'space-between',
           fontWeight: 600,
-          color: '#1E1450',
-          borderBottom: '1px solid #eef0f5',
+          color: 'var(--text)',
+          borderBottom: '1px solid var(--border)',
           py: 2,
           px: 3,
         }}
@@ -46,7 +52,7 @@ export default function AppDialog({
           onClick={onClose}
           disabled={loading}
           size="small"
-          sx={{ color: '#8a8fa3' }}
+          sx={{ color: 'var(--text-secondary)' }}
         >
           <CloseIcon fontSize="small" />
         </IconButton>
@@ -58,7 +64,7 @@ export default function AppDialog({
 
       <DialogActions
         sx={{
-          borderTop: '1px solid #eef0f5',
+          borderTop: '1px solid var(--border)',
           px: 3,
           py: 2,
         }}

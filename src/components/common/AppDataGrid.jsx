@@ -12,7 +12,7 @@ export default function AppDataGrid({
     <Box
       sx={{
         width: '100%',
-        backgroundColor: '#fff',
+        backgroundColor: 'var(--card-bg)',
       }}
     >
       <DataGrid
@@ -37,34 +37,37 @@ export default function AppDataGrid({
         sx={{
           border: 0,
 
+          color: 'var(--text)',
+
           '& .MuiDataGrid-toolbarContainer': {
             padding: '12px 16px',
-            borderBottom: '1px solid #edf0f2',
+            borderBottom: '1px solid var(--border)',
             gap: 1,
           },
 
           '& .MuiDataGrid-columnHeaders': {
-            backgroundColor: '#f8f9fb',
-            borderBottom: '1px solid #e5e7eb',
+            backgroundColor: 'var(--page-bg)',
+            borderBottom: '1px solid var(--border)',
           },
 
           '& .MuiDataGrid-columnHeaderTitle': {
             fontWeight: 600,
             fontSize: '0.85rem',
-            color: '#343a40',
+            color: 'var(--text)',
           },
 
           '& .MuiDataGrid-cell': {
-            borderColor: '#f0f1f3',
+            borderColor: 'var(--border)',
             fontSize: '0.875rem',
           },
 
           '& .MuiDataGrid-row:hover': {
-            backgroundColor: '#fafbfc',
+            backgroundColor: 'var(--page-bg)',
           },
 
           '& .MuiDataGrid-footerContainer': {
-            borderTop: '1px solid #edf0f2',
+            borderTop: '1px solid var(--border)',
+            color: 'var(--text-secondary)',
           },
 
           '& .MuiDataGrid-columnSeparator': {

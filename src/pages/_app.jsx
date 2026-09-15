@@ -1,6 +1,7 @@
 import Head from 'next/head'
 import { Inter } from 'next/font/google'
 import { AuthGate } from '@/components/auth/AuthGate'
+import ThemeProvider from '@/components/common/ThemeProvider'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '@/styles/globals.css'
 import '@/styles/personas.css'
@@ -28,9 +29,11 @@ export default function App({ Component, pageProps }) {
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </Head>
       <div className={inter.className}>
-        <AuthGate>
-          <Component {...pageProps} />
-        </AuthGate>
+        <ThemeProvider>
+          <AuthGate>
+            <Component {...pageProps} />
+          </AuthGate>
+        </ThemeProvider>
       </div>
     </>
   )
