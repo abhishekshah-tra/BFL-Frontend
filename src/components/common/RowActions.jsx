@@ -13,7 +13,11 @@ export default function RowActions({
   onDelete,
 }) {
   return (
-    <div className="d-flex align-items-center gap-1">
+    <div
+      className="d-flex align-items-center gap-1"
+      style={{ height: '100%' }}
+    >
+
       <Tooltip title="View">
         <IconButton
           size="small"
