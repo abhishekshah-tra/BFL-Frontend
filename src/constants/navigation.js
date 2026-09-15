@@ -72,6 +72,31 @@ export const NAV_ITEMS = [
       },
     ],
   },
+ {
+  id: 'user-management',
+  label: 'User Management',
+  icon: 'users',
+  children: [
+    {
+      id: 'roles',
+      label: 'Role',
+      path: '/user-management/roles',
+      icon: 'shield-check',
+    },
+    {
+      id: 'role-permissions',
+      label: 'Role Permission',
+      path: '/user-management/role-permissions',
+      icon: 'key-round',
+    },
+    {
+      id: 'users',
+      label: 'User',
+      path: '/user-management/users',
+      icon: 'user-round',
+    },
+  ],
+},
   { id: 'settings', label: 'Settings', path: '/settings', icon: 'settings' },
 ]
 

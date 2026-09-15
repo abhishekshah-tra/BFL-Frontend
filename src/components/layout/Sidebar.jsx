@@ -21,7 +21,11 @@ import {
   Settings,
   TowerControl,
   Workflow,
-  Zap
+  Zap,
+  Users,
+  ShieldCheck,
+  KeyRound,
+  UserRound
 } from "lucide-react";
 import { APP_NAME, HELP_ITEM, NAV_ITEMS } from "../../constants/navigation";
 
@@ -42,7 +46,11 @@ const ICONS = {
   database: Database,
   menu: LayoutGrid,
   screen: Monitor,
-  action: Zap
+  action: Zap,
+  users :Users,
+  'shield-check' : ShieldCheck,
+  'key-round' :KeyRound,
+  'user-round' : UserRound
 };
 
 function isPathActive(pathname, path) {

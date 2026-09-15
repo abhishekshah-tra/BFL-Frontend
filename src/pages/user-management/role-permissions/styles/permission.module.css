@@ -1,0 +1,336 @@
+.permissionTableWrapper {
+  width: 100%;
+  background: #fff;
+}
+
+/* =========================
+   TABLE
+========================= */
+
+.permissionTable {
+  width: 100%;
+  min-width: 760px;
+
+  border-collapse: separate;
+  border-spacing: 0;
+
+  font-size: 12px;
+}
+
+.permissionTable thead th {
+  background: #f7f8fa;
+
+  border-bottom: 1px solid #e4e7eb;
+
+  vertical-align: middle;
+}
+
+/* =========================
+   HEADER
+========================= */
+
+.permissionScreenHeader {
+  position: sticky;
+  left: 0;
+  z-index: 5;
+
+  width: 230px;
+  min-width: 230px;
+
+  padding: 8px 12px !important;
+
+  background: #f7f8fa !important;
+
+  border-right: 1px solid #e4e7eb !important;
+}
+
+.permissionHeaderTitle {
+  color: #343a40;
+
+  font-size: 11px;
+  line-height: 14px;
+
+  font-weight: 600;
+}
+
+.permissionHeaderSubtitle {
+  margin-top: 1px;
+
+  color: #9298a1;
+
+  font-size: 8px;
+  line-height: 10px;
+
+  font-weight: 400;
+}
+
+/* =========================
+   ACTION HEADER
+========================= */
+
+.permissionActionHeader {
+  width: 82px;
+  min-width: 82px;
+
+  padding: 6px 3px !important;
+
+  text-align: center;
+}
+
+.permissionActionTitle {
+  color: #343a40;
+
+  font-size: 10px;
+  line-height: 13px;
+
+  font-weight: 600;
+
+  white-space: nowrap;
+}
+
+.permissionActionCode {
+  margin-top: 0;
+
+  color: #9aa0a8;
+
+  font-size: 7px;
+  line-height: 9px;
+
+  font-weight: 500;
+
+  letter-spacing: 0.15px;
+
+  white-space: nowrap;
+}
+
+/* =========================
+   ROWS
+========================= */
+
+.permissionTable tbody tr {
+  transition: background-color 0.12s ease;
+}
+
+.permissionTable tbody tr:hover {
+  background-color: #fafbfc !important;
+}
+
+.permissionRowEven {
+  background-color: #fcfcfd;
+}
+
+/* =========================
+   SCREEN CELL
+========================= */
+
+.permissionScreenCell {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+
+  width: 230px;
+  min-width: 230px;
+
+  height: 44px;
+
+  padding: 6px 12px !important;
+
+  background: #fff;
+
+  border-right: 1px solid #e4e7eb !important;
+  border-bottom: 1px solid #f0f1f3 !important;
+}
+
+.permissionRowEven
+  .permissionScreenCell {
+  background: #fcfcfd;
+}
+
+.permissionTable tbody tr:hover
+  .permissionScreenCell {
+  background: #fafbfc;
+}
+
+/* =========================
+   SCREEN ICON
+========================= */
+
+.permissionScreenIcon {
+  width: 25px;
+  height: 25px;
+  min-width: 25px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 5px;
+
+  background: #eeecf8;
+  color: #1e1450;
+
+  font-size: 9px;
+  font-weight: 700;
+}
+
+/* =========================
+   SCREEN TEXT
+========================= */
+
+.permissionScreenName {
+  max-width: 150px;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  color: #25282c;
+
+  font-size: 10px;
+  line-height: 13px;
+
+  font-weight: 600;
+}
+
+.permissionScreenCode {
+  margin-top: 0;
+
+  color: #9aa0a8;
+
+  font-size: 7px;
+  line-height: 9px;
+
+  font-weight: 500;
+}
+
+/* =========================
+   PERMISSION CELL
+========================= */
+
+.permissionCell {
+  position: relative;
+
+  width: 82px;
+  min-width: 82px;
+
+  height: 44px;
+
+  padding: 0 !important;
+
+  text-align: center;
+  vertical-align: middle;
+
+  border-bottom: 1px solid #f0f1f3 !important;
+
+  transition: background-color 0.12s ease;
+}
+
+.permissionCellActive {
+  background: #f5f3fb;
+}
+
+.permissionCell:hover {
+  background: #f0eef8;
+}
+
+/* =========================
+   CHECKBOX
+========================= */
+
+.permissionTable
+  :global(.MuiCheckbox-root) {
+  padding: 2px !important;
+}
+
+.permissionCell
+  :global(.MuiCheckbox-root) {
+  transition: transform 0.12s ease;
+}
+
+.permissionCell:hover
+  :global(.MuiCheckbox-root) {
+  transform: scale(1.06);
+}
+
+/* =========================
+   FOOTER
+========================= */
+
+.permissionTableFooter {
+  padding: 6px 12px;
+
+  background: #fff;
+
+  border-top: 1px solid #e4e7eb;
+}
+
+.permissionTableFooter
+  :global(.text-muted) {
+  color: #9298a1 !important;
+
+  font-size: 9px !important;
+  line-height: 12px;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+.permissionTableWrapper
+  :global(.table-responsive) {
+  max-width: 100%;
+
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+/* =========================
+   SCROLLBAR
+========================= */
+
+.permissionTableWrapper
+  :global(.table-responsive::-webkit-scrollbar) {
+  height: 5px;
+}
+
+.permissionTableWrapper
+  :global(.table-responsive::-webkit-scrollbar-track) {
+  background: #f5f6f8;
+}
+
+.permissionTableWrapper
+  :global(.table-responsive::-webkit-scrollbar-thumb) {
+  background: #c9ccd2;
+  border-radius: 8px;
+}
+
+.permissionTableWrapper
+  :global(.table-responsive::-webkit-scrollbar-thumb:hover) {
+  background: #adb1b8;
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 767.98px) {
+  .permissionScreenHeader,
+  .permissionScreenCell {
+    width: 190px;
+    min-width: 190px;
+  }
+
+  .permissionActionHeader,
+  .permissionCell {
+    width: 72px;
+    min-width: 72px;
+  }
+
+  .permissionTable {
+    min-width: 700px;
+  }
+
+  .permissionScreenName {
+    max-width: 115px;
+  }
+}

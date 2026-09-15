@@ -1,23 +1,22 @@
 import api from '../lib/axios';
 
-export const getPermissionsByRole = async (roleId) => {
-  const response = await api.get(`/permissions/role/${roleId}`);
-  return response.data;
-};
-
-export const assignPermission = async (payload) => {
-  const response = await api.post(
-    '/permissions/assign',
-    payload,
+export const getRolePermissions = async (roleId) => {
+  const response = await api.get(
+    `/permissions/role/${roleId}`,
   );
 
   return response.data;
 };
 
-export const updatePermissions = async (payload) => {
-  const response = await api.patch(
-    '/permissions',
-    payload,
+export const saveRolePermissions = async (
+  roleId,
+  permissions,
+) => {
+  const response = await api.put(
+    `/role-permissions/role/${roleId}`,
+    {
+      permissions,
+    },
   );
 
   return response.data;
