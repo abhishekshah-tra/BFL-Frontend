@@ -199,17 +199,22 @@ export default function ActionsPage() {
       />
 
       <div className="page-body">
-        <div className="d-flex justify-content-end">
+        <div className="d-flex justify-content-end align-items-center py-2">
           <Button
             variant="contained"
             startIcon={<AddIcon />}
             onClick={handleAdd}
             sx={{
-              minWidth: 140,
-              height: 42,
+              minWidth: 120,
+              height: 36,
               borderRadius: '8px',
               textTransform: 'none',
               fontWeight: 600,
+              backgroundColor: '#000',
+              color: '#fff',
+              '&:hover': {
+                backgroundColor: '#222',
+              },
             }}
           >
             Add Action

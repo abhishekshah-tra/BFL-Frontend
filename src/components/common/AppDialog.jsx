@@ -52,7 +52,7 @@ export default function AppDialog({
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ px: 3, py: 3 }}>
+      <DialogContent sx={{ px: 3, pt: 3, pb: 3 }}>
         {children}
       </DialogContent>
 

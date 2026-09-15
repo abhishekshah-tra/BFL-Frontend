@@ -39,7 +39,7 @@ export default function MenuForm({
     }));
 
   return (
-    <div className="row g-3">
+    <div className="row g-3" style={{ marginTop: 0 }}>
 
       <div className="col-12 col-md-6">
         <CommonInput
