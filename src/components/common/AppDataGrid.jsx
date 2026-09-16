@@ -59,6 +59,8 @@ export default function AppDataGrid({
           '& .MuiDataGrid-cell': {
             borderColor: 'var(--border)',
             fontSize: '0.875rem',
+            display: 'flex',
+            alignItems: 'center',
           },
 
           '& .MuiDataGrid-row:hover': {
