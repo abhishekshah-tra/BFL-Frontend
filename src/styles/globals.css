@@ -498,7 +498,6 @@ select:focus-visible,
 textarea:focus-visible,
 input:focus-visible {
   outline: none;
-  box-shadow: var(--focus);
 }
 
 .icon-btn--bordered {
