@@ -13,7 +13,7 @@ export const saveRolePermissions = async (
   permissions,
 ) => {
   const response = await api.put(
-    `/role-permissions/role/${roleId}`,
+    `/permissions/role/${roleId}`,
     {
       permissions,
     },

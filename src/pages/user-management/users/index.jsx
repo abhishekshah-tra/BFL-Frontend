@@ -20,15 +20,18 @@ import {
   getUsers,
   createUser,
   updateUser,
+  updateUserStatus,
   deleteUser,
 } from '@/services/user.service';
 
 import { getRoles } from '@/services/role.service';
 
 const emptyForm = {
-  name: '',
+  firstName: '',
+  lastName: '',
   email: '',
   password: '',
+  confirmPassword: '',
   roleId: '',
   isActive: true,
 };
@@ -64,6 +67,10 @@ export default function UsersPage() {
     return response?.data || [];
   };
 
+  // =========================
+  // LOAD USERS
+  // =========================
+
   const loadUsers = async () => {
     try {
       setLoading(true);
@@ -71,7 +78,6 @@ export default function UsersPage() {
       const response = await getUsers();
 
       setRows(normalizeResponse(response));
-
       setLastUpdated(new Date());
     } catch (error) {
       console.error(
@@ -82,6 +88,10 @@ export default function UsersPage() {
       setLoading(false);
     }
   };
+
+  // =========================
+  // LOAD ROLES
+  // =========================
 
   const loadRoles = async () => {
     try {
@@ -101,6 +111,10 @@ export default function UsersPage() {
     loadRoles();
   }, []);
 
+  // =========================
+  // ADD
+  // =========================
+
   const handleAdd = () => {
     setMode('add');
     setSelectedRow(null);
@@ -112,71 +126,120 @@ export default function UsersPage() {
     setDialogOpen(true);
   };
 
+  // =========================
+  // GET ROLE ID
+  // =========================
+
+  const getRoleId = (row) => {
+    if (!row?.roleId) {
+      return '';
+    }
+
+    if (typeof row.roleId === 'string') {
+      return row.roleId;
+    }
+
+    return row.roleId?._id || '';
+  };
+
+  // =========================
+  // VIEW
+  // =========================
+
   const handleView = (row) => {
     setMode('view');
     setSelectedRow(row);
 
     setForm({
-      name: row.name || '',
+      firstName: row.firstName || '',
+      lastName: row.lastName || '',
       email: row.email || '',
       password: '',
-      roleId:
-        row.roleId?._id ||
-        row.roleId ||
-        row.role?._id ||
-        '',
+      confirmPassword: '',
+      roleId: getRoleId(row),
       isActive: row.isActive ?? true,
     });
 
     setDialogOpen(true);
   };
+
+  // =========================
+  // EDIT
+  // =========================
 
   const handleEdit = (row) => {
     setMode('edit');
     setSelectedRow(row);
 
     setForm({
-      name: row.name || '',
+      firstName: row.firstName || '',
+      lastName: row.lastName || '',
       email: row.email || '',
       password: '',
-      roleId:
-        row.roleId?._id ||
-        row.roleId ||
-        row.role?._id ||
-        '',
+      confirmPassword: '',
+      roleId: getRoleId(row),
       isActive: row.isActive ?? true,
     });
 
     setDialogOpen(true);
   };
 
+  // =========================
+  // DELETE
+  // =========================
+
   const handleDelete = (row) => {
     setSelectedRow(row);
     setDeleteOpen(true);
   };
 
+  // =========================
+  // SUBMIT
+  // =========================
+
   const handleSubmit = async () => {
     try {
+      // Password required on create
+      if (
+        mode === 'add' &&
+        !form.password?.trim()
+      ) {
+        return;
+      }
+
+      // Password confirmation
+      if (
+        form.password &&
+        form.password !== form.confirmPassword
+      ) {
+        return;
+      }
+
+      // Role required
+      if (!form.roleId) {
+        return;
+      }
+
       setSaving(true);
 
       const payload = {
-        name: form.name.trim(),
+        firstName: form.firstName.trim(),
+        lastName: form.lastName?.trim() || '',
         email: form.email.trim(),
         roleId: form.roleId,
         isActive: form.isActive,
       };
 
-      /*
-       * Password is required only while creating
-       * a new user.
-       */
+      // Password required on create
       if (mode === 'add') {
         payload.password = form.password;
-      } else if (form.password?.trim()) {
-        /*
-         * Allow password update when a new
-         * password is provided.
-         */
+      }
+
+      // Password optional on edit
+      if (
+        mode === 'edit' &&
+        form.password?.trim()
+      ) {
         payload.password = form.password;
       }
 
@@ -190,6 +253,7 @@ export default function UsersPage() {
       }
 
       setDialogOpen(false);
+      setSelectedRow(null);
 
       await loadUsers();
     } catch (error) {
@@ -201,6 +265,34 @@ export default function UsersPage() {
       setSaving(false);
     }
   };
+
+  // =========================
+  // STATUS
+  // =========================
+
+  const handleStatusChange = async (row) => {
+    try {
+      setSaving(true);
+
+      await updateUserStatus(
+        row._id,
+        !row.isActive,
+      );
+
+      await loadUsers();
+    } catch (error) {
+      console.error(
+        'Failed to update user status:',
+        error,
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // =========================
+  // CONFIRM DELETE
+  // =========================
 
   const handleConfirmDelete = async () => {
     if (!selectedRow) {
@@ -226,21 +318,47 @@ export default function UsersPage() {
     }
   };
 
+  // =========================
+  // ROLE NAME
+  // =========================
+
   const roleName = (row) => {
-    return (
-      row.roleId?.name ||
-      row.role?.name ||
-      row.roleName ||
-      '-'
+    if (!row?.roleId) {
+      return '-';
+    }
+
+    // Populated role
+    if (
+      typeof row.roleId === 'object'
+    ) {
+      return row.roleId?.name || '-';
+    }
+
+    // Role ID only
+    const foundRole = roles.find(
+      (role) => role._id === row.roleId,
     );
+
+    return foundRole?.name || '-';
   };
+
+  // =========================
+  // COLUMNS
+  // =========================
 
   const columns = [
     {
-      field: 'name',
-      headerName: 'Name',
-      flex: 1.2,
-      minWidth: 180,
+      field: 'firstName',
+      headerName: 'First Name',
+      flex: 1,
+      minWidth: 140,
+    },
+
+    {
+      field: 'lastName',
+      headerName: 'Last Name',
+      flex: 1,
+      minWidth: 140,
     },
 
     {
@@ -251,10 +369,11 @@ export default function UsersPage() {
     },
 
     {
-      field: 'role',
+      field: 'roleId',
       headerName: 'Role',
-      flex: 1,
-      minWidth: 160,
+      flex: 1.3,
+      minWidth: 180,
+      sortable: false,
       valueGetter: (value, row) =>
         roleName(row),
     },
@@ -307,6 +426,7 @@ export default function UsersPage() {
       <div className="page-body">
 
         {/* Add User */}
+
         <div className="d-flex justify-content-end align-items-center mb-2">
 
           <Button
@@ -335,6 +455,7 @@ export default function UsersPage() {
         </div>
 
         {/* Users Grid */}
+
         <AppDataGrid
           rows={rows}
           columns={columns}
@@ -344,6 +465,7 @@ export default function UsersPage() {
       </div>
 
       {/* User Dialog */}
+
       <AppDialog
         open={dialogOpen}
         title={
@@ -375,6 +497,7 @@ export default function UsersPage() {
       </AppDialog>
 
       {/* Delete Confirmation */}
+
       <ConfirmDialog
         open={deleteOpen}
         onClose={() =>
@@ -384,7 +507,7 @@ export default function UsersPage() {
           handleConfirmDelete
         }
         loading={saving}
-        message={`Are you sure you want to delete "${selectedRow?.name}"?`}
+        message={`Are you sure you want to delete "${selectedRow?.firstName || ''} ${selectedRow?.lastName || ''}"?`}
       />
 
     </div>

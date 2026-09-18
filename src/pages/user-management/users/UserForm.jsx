@@ -34,6 +34,11 @@ export default function UserForm({
     }));
   };
 
+  const passwordMismatch =
+    form.password &&
+    form.confirmPassword &&
+    form.password !== form.confirmPassword;
+
   return (
     <div
       className="row g-2"
@@ -41,20 +46,33 @@ export default function UserForm({
         marginTop: 0,
       }}
     >
+      {/* First Name */}
 
-      {/* Name */}
       <div className="col-12 col-md-6">
         <CommonInput
-          label="Name"
-          name="name"
-          value={form.name}
+          label="First Name"
+          name="firstName"
+          value={form.firstName}
           onChange={handleChange}
           required
           disabled={readOnly}
         />
       </div>
 
+      {/* Last Name */}
+
+      <div className="col-12 col-md-6">
+        <CommonInput
+          label="Last Name"
+          name="lastName"
+          value={form.lastName}
+          onChange={handleChange}
+          disabled={readOnly}
+        />
+      </div>
+
       {/* Email */}
+
       <div className="col-12 col-md-6">
         <CommonInput
           label="Email"
@@ -67,7 +85,24 @@ export default function UserForm({
         />
       </div>
 
+      {/* Role */}
+
+      <div className="col-12 col-md-6">
+        <CommonSelect
+          label="Roles"
+          name="roleId"
+          value={form.roleId}
+          onChange={handleChange}
+          options={roleOptions}
+          required
+          disabled={readOnly}
+          placeholder="Select Roles"
+          multiple
+        />
+      </div>
+
       {/* Password */}
+
       <div className="col-12 col-md-6">
         <CommonInput
           label={
@@ -86,26 +121,35 @@ export default function UserForm({
               ? 'Leave blank to keep the current password.'
               : ''
           }
+          error={Boolean(passwordMismatch)}
         />
       </div>
 
-      {/* Role */}
+      {/* Confirm Password */}
+
       <div className="col-12 col-md-6">
-        <CommonSelect
-          label="Role"
-          name="roleId"
-          value={form.roleId}
+        <CommonInput
+          label="Confirm Password"
+          name="confirmPassword"
+          type="password"
+          value={form.confirmPassword}
           onChange={handleChange}
-          options={roleOptions}
-          required
+          required={mode === 'add'}
           disabled={readOnly}
-          placeholder="Select Role"
+          error={Boolean(passwordMismatch)}
+          helperText={
+            passwordMismatch
+              ? 'Passwords do not match.'
+              : mode === 'edit'
+                ? 'Leave blank if you are not changing the password.'
+                : ''
+          }
         />
       </div>
 
       {/* Status */}
-      <div className="col-12">
 
+      <div className="col-12">
         <CommonSwitch
           label="Active"
           name="isActive"
@@ -113,9 +157,7 @@ export default function UserForm({
           onChange={handleChange}
           disabled={readOnly}
         />
-
       </div>
-
     </div>
   );
 }
