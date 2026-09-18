@@ -83,7 +83,7 @@ function ControlTowerContent() {
   const jafzaPts = parseChartPoints(chart.jafza);
   const technoPts = parseChartPoints(chart.techno);
   return <div id="page-control-tower" className={`page-view active${loading ? " ct-loading" : ""}`}>
-      <div className="page-banner blue">1. EXECUTIVE LANDING PAGE – CONTROL TOWER</div>
+      {/* <div className="page-banner blue">1. EXECUTIVE LANDING PAGE – CONTROL TOWER</div> */}
       <div className="dash-header">
         <h2>Control Tower</h2>
         <div className="filters">

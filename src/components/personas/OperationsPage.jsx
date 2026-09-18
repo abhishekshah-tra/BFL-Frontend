@@ -120,9 +120,9 @@ function OperationsContent() {
     id="page-operations"
     className={`page-view active${loading ? " ops-loading" : ""}`}
   >
-      <div className="page-banner green">
+      {/* <div className="page-banner green">
         2. OPERATIONS MANAGER LANDING PAGE – OPERATIONS OVERVIEW
-      </div>
+      </div> */}
 
       <div className="ops-header-block">
         <h2>Operations Overview</h2>
@@ -130,12 +130,12 @@ function OperationsContent() {
           <div className="ops-filter-group">
             <div className="filter-label-wrap">
               <label htmlFor="ops-warehouse">Warehouse</label>
-              <select
-    className="filter-select"
-    id="ops-warehouse"
-    value={warehouse}
-    onChange={(e) => fetchData(timeframe, e.target.value)}
-  >
+            <select
+              className="filter-select"
+              id="ops-warehouse"
+              value={warehouse}
+              onChange={(e) => fetchData(timeframe, e.target.value)}
+            >
                 {WAREHOUSES.map((w) => <option key={w} value={w}>
                     {w}
                   </option>)}

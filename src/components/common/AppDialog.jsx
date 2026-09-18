@@ -17,13 +17,14 @@ export default function AppDialog({
   submitText = 'Save',
   loading = false,
   hideSubmit = false,
+  maxWidth = 'sm',
 }) {
   return (
     <Dialog
       open={open}
       onClose={loading ? undefined : onClose}
       fullWidth
-      maxWidth="sm"
+      maxWidth={maxWidth}
       slotProps={{
         paper: {
           sx: {

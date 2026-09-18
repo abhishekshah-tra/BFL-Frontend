@@ -72,31 +72,54 @@ export const NAV_ITEMS = [
       },
     ],
   },
- {
-  id: 'user-management',
-  label: 'User Management',
-  icon: 'users',
-  children: [
-    {
-      id: 'roles',
-      label: 'Role',
-      path: '/user-management/roles',
-      icon: 'shield-check',
-    },
-    {
-      id: 'role-permissions',
-      label: 'Role Permission',
-      path: '/user-management/role-permissions',
-      icon: 'key-round',
-    },
-    {
-      id: 'users',
-      label: 'User',
-      path: '/user-management/users',
-      icon: 'user-round',
-    },
-  ],
-},
+
+  // ============================================================ // CONFIGURATION // ============================================================ 
+  { id: 'configuration', 
+    label: 'Configuration', 
+    icon: 'settings', 
+    children: [
+      { 
+        id: 'warehouse-master', 
+        label: 'Warehouse Master', 
+        path: '/configuration/warehouse-master', 
+        icon: 'warehouse', 
+      }, 
+      { 
+        id: 'process-master', 
+        label: 'Process Master', 
+        path: '/configuration/process-master', 
+        icon: 'process',
+       }, 
+       {
+         id: 'warehouse-configuration', 
+         label: 'Warehouse Configuration', path: '/configuration/warehouse-configuration', icon: 'settings', 
+      },
+    ], },
+  {
+    id: 'user-management',
+    label: 'User Management',
+    icon: 'users',
+    children: [
+      {
+        id: 'roles',
+        label: 'Role',
+        path: '/user-management/roles',
+        icon: 'shield-check',
+      },
+      {
+        id: 'role-permissions',
+        label: 'Role Permission',
+        path: '/user-management/role-permissions',
+        icon: 'key-round',
+      },
+      {
+        id: 'users',
+        label: 'User',
+        path: '/user-management/users',
+        icon: 'user-round',
+      },
+    ],
+  },
   { id: 'settings', label: 'Settings', path: '/settings', icon: 'settings' },
 ]
 
