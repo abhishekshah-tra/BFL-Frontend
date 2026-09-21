@@ -1,7 +1,7 @@
-'use client';
-
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
 import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
 import AddIcon from '@mui/icons-material/Add';
 
 import AppDataGrid from '@/components/common/AppDataGrid';
@@ -12,10 +12,16 @@ import RowActions from '@/components/common/RowActions';
 import { Header } from '@/components/layout/Header';
 import { useLayout } from '@/components/layout/LayoutContext';
 
+import { formatProcessSla, SLA_UNIT, normalizeSlaUnit, sortProcesses } from '@/data/processMaster';
 import {
-  PROCESS_MASTER_DATA,
-  formatProcessSla,
-} from '@/data/processMaster';
+  createProcess,
+  deleteProcess,
+  getProcessById,
+  getProcesses,
+  updateProcess,
+} from '@/services/process.service';
+import { getChangedFields, getErrorMessage } from '@/utils/api';
+import { serializeProps } from '@/utils/ssr';
 
 import ProcessForm from './ProcessForm';
 
@@ -26,17 +32,95 @@ const emptyForm = {
   sequence: '',
   capacityPerHour: '',
   sla: '',
-  slaUnit: 'Minutes',
+  slaUnit: SLA_UNIT.MIN,
   isActive: true,
 };
 
-export default function ProcessMasterPage() {
-  const { onMenuClick } = useLayout();
+const mapRowToForm = (row) => ({
+  code: row.code || '',
+  name: row.name || '',
+  description: row.description || '',
+  sequence: row.sequence ?? '',
+  capacityPerHour: row.capacityPerHour ?? '',
+  sla: row.sla ?? '',
+  slaUnit: normalizeSlaUnit(row.slaUnit),
+  isActive: row.isActive ?? true,
+});
 
-  const [rows, setRows] = useState(PROCESS_MASTER_DATA);
-  const [lastUpdated, setLastUpdated] = useState(() => new Date());
+const buildPayload = (form) => ({
+  code: form.code.trim().toUpperCase(),
+  name: form.name.trim(),
+  description: form.description?.trim() || '',
+  sequence: Number(form.sequence),
+  capacityPerHour: Number(form.capacityPerHour),
+  sla: Number(form.sla),
+  slaUnit: normalizeSlaUnit(form.slaUnit),
+  isActive: Boolean(form.isActive),
+});
+
+const validateForm = (form) => {
+  if (!form.code?.trim() || !form.name?.trim()) {
+    return 'Process code and name are required.';
+  }
+
+  if (form.sequence === '' || !Number.isFinite(Number(form.sequence)) || Number(form.sequence) < 1) {
+    return 'Sequence must be at least 1.';
+  }
+
+  if (
+    form.capacityPerHour === '' ||
+    !Number.isFinite(Number(form.capacityPerHour)) ||
+    Number(form.capacityPerHour) < 0
+  ) {
+    return 'Capacity per hour must be 0 or more.';
+  }
+
+  if (form.sla === '' || !Number.isFinite(Number(form.sla)) || Number(form.sla) < 0) {
+    return 'SLA must be 0 or more.';
+  }
+
+  if (!form.slaUnit || !Object.values(SLA_UNIT).includes(normalizeSlaUnit(form.slaUnit))) {
+    return 'SLA unit is required and must be Minutes, Hours, or Days.';
+  }
+
+  return '';
+};
+
+export async function getServerSideProps() {
+  try {
+    const rows = await getProcesses();
+
+    return {
+      props: serializeProps({
+        initialRows: sortProcesses(Array.isArray(rows) ? rows : []),
+        fetchedAt: new Date().toISOString(),
+        initialError: '',
+      }),
+    };
+  } catch (error) {
+    return {
+      props: {
+        initialRows: [],
+        fetchedAt: new Date().toISOString(),
+        initialError: getErrorMessage(error, 'Failed to load processes.'),
+      },
+    };
+  }
+}
+
+export default function ProcessMasterPage({
+  initialRows,
+  fetchedAt,
+  initialError = '',
+}) {
+  const { onMenuClick } = useLayout();
+  const router = useRouter();
+
+  const [rows, setRows] = useState(initialRows);
+  const [lastUpdated, setLastUpdated] = useState(() => new Date(fetchedAt));
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(initialError);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -45,113 +129,123 @@ export default function ProcessMasterPage() {
   const [selectedRow, setSelectedRow] = useState(null);
   const [form, setForm] = useState({ ...emptyForm });
 
-  const mapRowToForm = (row) => ({
-    code: row.code || '',
-    name: row.name || '',
-    description: row.description || '',
-    sequence: row.sequence ?? '',
-    capacityPerHour: row.capacityPerHour ?? '',
-    sla: row.sla ?? '',
-    slaUnit: row.slaUnit || 'Minutes',
-    isActive: row.isActive ?? true,
-  });
+  useEffect(() => {
+    setRows(initialRows);
+    setError(initialError);
+    setLastUpdated(new Date(fetchedAt));
+    setLoading(false);
+  }, [initialRows, initialError, fetchedAt]);
 
-  const handleRefresh = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setLastUpdated(new Date());
+  const loadProcesses = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      await router.replace(router.asPath);
+    } catch (loadError) {
+      setError(getErrorMessage(loadError, 'Failed to load processes.'));
       setLoading(false);
-    }, 300);
+    }
+  };
+
+  const openDialog = (nextMode, row = null, nextForm = emptyForm) => {
+    setMode(nextMode);
+    setSelectedRow(row);
+    setForm({ ...nextForm });
+    setError('');
+    setDialogOpen(true);
   };
 
   const handleAdd = () => {
-    setMode('add');
-    setSelectedRow(null);
-    setForm({
+    const nextSequence =
+      rows.reduce((max, row) => Math.max(max, Number(row.sequence) || 0), 0) +
+      1;
+
+    openDialog('add', null, {
       ...emptyForm,
-      sequence: rows.length + 1,
+      sequence: nextSequence,
     });
-    setDialogOpen(true);
   };
 
-  const handleView = (row) => {
-    setMode('view');
-    setSelectedRow(row);
-    setForm(mapRowToForm(row));
-    setDialogOpen(true);
+  const hydrateRow = async (row) => {
+    try {
+      const fresh = await getProcessById(row._id);
+      return fresh || row;
+    } catch {
+      return row;
+    }
   };
 
-  const handleEdit = (row) => {
-    setMode('edit');
-    setSelectedRow(row);
-    setForm(mapRowToForm(row));
-    setDialogOpen(true);
+  const handleView = async (row) => {
+    openDialog('view', row, mapRowToForm(row));
+    const fresh = await hydrateRow(row);
+    setSelectedRow(fresh);
+    setForm(mapRowToForm(fresh));
+  };
+
+  const handleEdit = async (row) => {
+    openDialog('edit', row, mapRowToForm(row));
+    const fresh = await hydrateRow(row);
+    setSelectedRow(fresh);
+    setForm(mapRowToForm(fresh));
   };
 
   const handleDelete = (row) => {
     setSelectedRow(row);
+    setError('');
     setDeleteOpen(true);
   };
 
-  const handleSubmit = () => {
-    if (
-      !form.code?.trim() ||
-      !form.name?.trim() ||
-      form.sequence === '' ||
-      form.capacityPerHour === '' ||
-      form.sla === '' ||
-      !form.slaUnit
-    ) {
+  const handleSubmit = async () => {
+    const validationError = validateForm(form);
+
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
-    setSaving(true);
+    try {
+      setSaving(true);
+      setError('');
 
-    const payload = {
-      ...form,
-      code: form.code.trim().toUpperCase(),
-      name: form.name.trim(),
-      sequence: Number(form.sequence) || 0,
-      capacityPerHour: Number(form.capacityPerHour) || 0,
-      sla: Number(form.sla) || 0,
-    };
+      const payload = buildPayload(form);
 
-    setTimeout(() => {
       if (mode === 'add') {
-        setRows((previous) =>
-          [...previous, { _id: String(Date.now()), ...payload }].sort(
-            (a, b) => a.sequence - b.sequence,
-          ),
-        );
-      } else if (mode === 'edit' && selectedRow) {
-        setRows((previous) =>
-          previous
-            .map((row) =>
-              row._id === selectedRow._id
-                ? { ...row, ...payload }
-                : row,
-            )
-            .sort((a, b) => a.sequence - b.sequence),
-        );
+        await createProcess(payload);
+      } else if (selectedRow) {
+        const patch = getChangedFields(buildPayload(selectedRow), payload);
+
+        if (Object.keys(patch).length) {
+          await updateProcess(selectedRow._id, patch);
+        }
       }
 
       setDialogOpen(false);
-      setLastUpdated(new Date());
+      await loadProcesses();
+    } catch (saveError) {
+      setError(getErrorMessage(saveError, 'Failed to save process.'));
+    } finally {
       setSaving(false);
-    }, 200);
+    }
   };
 
-  const handleConfirmDelete = () => {
-    setSaving(true);
+  const handleConfirmDelete = async () => {
+    if (!selectedRow) return;
 
-    setTimeout(() => {
-      setRows((previous) =>
-        previous.filter((row) => row._id !== selectedRow?._id),
-      );
+    try {
+      setSaving(true);
+      setError('');
+
+      await deleteProcess(selectedRow._id);
+
       setDeleteOpen(false);
-      setLastUpdated(new Date());
+      setSelectedRow(null);
+      await loadProcesses();
+    } catch (deleteError) {
+      setDeleteOpen(false);
+      setError(getErrorMessage(deleteError, 'Failed to deactivate process.'));
+    } finally {
       setSaving(false);
-    }, 200);
+    }
   };
 
   const columns = [
@@ -196,9 +290,7 @@ export default function ProcessMasterPage() {
       field: 'isActive',
       headerName: 'Status',
       width: 120,
-      renderCell: (params) => (
-        <StatusChip active={params.value} />
-      ),
+      renderCell: (params) => <StatusChip active={params.value} />,
     },
     {
       field: 'actions',
@@ -231,7 +323,7 @@ export default function ProcessMasterPage() {
         subtitle="Warehouse process recipe — steps, capacity and SLA"
         lastUpdated={lastUpdated}
         isRefreshing={loading}
-        onRefresh={handleRefresh}
+        onRefresh={loadProcesses}
       />
 
       <div className="page-body">
@@ -257,11 +349,13 @@ export default function ProcessMasterPage() {
           </Button>
         </div>
 
-        <AppDataGrid
-          rows={rows}
-          columns={columns}
-          loading={loading}
-        />
+        {error && !dialogOpen && !deleteOpen ? (
+          <Typography variant="body2" sx={{ color: '#c62828', mb: 1 }}>
+            {error}
+          </Typography>
+        ) : null}
+
+        <AppDataGrid rows={rows} columns={columns} loading={loading} />
       </div>
 
       <AppDialog
@@ -269,15 +363,23 @@ export default function ProcessMasterPage() {
         title={dialogTitle}
         onClose={() => setDialogOpen(false)}
         onSubmit={handleSubmit}
-        submitText="Save"
+        submitText={mode === 'edit' ? 'Update' : 'Save'}
         loading={saving}
         hideSubmit={mode === 'view'}
+        maxWidth="md"
       >
         <ProcessForm
           form={form}
           setForm={setForm}
           readOnly={mode === 'view'}
+          disableCode={mode !== 'add'}
         />
+
+        {error ? (
+          <Typography variant="body2" sx={{ color: '#c62828', mt: 2 }}>
+            {error}
+          </Typography>
+        ) : null}
       </AppDialog>
 
       <ConfirmDialog
@@ -285,7 +387,7 @@ export default function ProcessMasterPage() {
         onClose={() => setDeleteOpen(false)}
         onConfirm={handleConfirmDelete}
         loading={saving}
-        message={`Are you sure you want to delete "${selectedRow?.name}"?`}
+        message={`Are you sure you want to deactivate "${selectedRow?.name}"?`}
       />
     </div>
   );

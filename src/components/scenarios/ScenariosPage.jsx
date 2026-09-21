@@ -13,6 +13,7 @@ import { useLayout } from '../layout/LayoutContext'
 import { Card } from '../common/StatusBadge'
 import { getScenarioBoard } from '../../lib/scenarioBoard'
 import { TrendChart } from './TrendChart'
+import { LiveFeedBar, TypewriterValue } from '../common/TypewriterValue'
 
 const VIEWS = [
   { id: 'compare', label: 'Comparison', hint: 'KPI table', icon: GitCompare },
@@ -25,7 +26,7 @@ function ImpactBadge({ impact, tone }) {
   return <span className={`sc-impact sc-impact--${tone}`}>{impact}</span>
 }
 
-function RankingTable({ ranked, selectedId, onSelect }) {
+function RankingTable({ ranked, selectedId, onSelect, streamKey }) {
   return (
     <div className="table-wrap">
       <table className="data-table sc-rank-table">
@@ -39,7 +40,7 @@ function RankingTable({ ranked, selectedId, onSelect }) {
           </tr>
         </thead>
         <tbody>
-          {ranked.map((item) => (
+          {ranked.map((item, i) => (
             <tr
               key={item.id}
               className={`${item.id === selectedId ? 'is-selected' : ''} ${item.isBest ? 'sc-row--best' : ''} ${item.impactTone === 'negative' ? 'sc-row--worst' : ''}`}
@@ -50,10 +51,14 @@ function RankingTable({ ranked, selectedId, onSelect }) {
                 <span className="sc-sub">{item.columnHint.replace(/[()]/g, '')}</span>
               </td>
               <td className={item.impactTone === 'negative' ? 'sc-metric is-bad' : item.isBest ? 'sc-metric is-good' : ''}>
-                {Math.round(item.summary.score)}
+                <TypewriterValue text={Math.round(item.summary.score)} speed={28} delayMs={80 + i * 60} streamKey={streamKey} />
               </td>
-              <td>{item.rank}</td>
-              <td>{item.reason}</td>
+              <td>
+                <TypewriterValue text={item.rank} speed={40} delayMs={120 + i * 60} streamKey={streamKey} />
+              </td>
+              <td>
+                <TypewriterValue text={item.reason} speed={16} delayMs={160 + i * 60} streamKey={streamKey} />
+              </td>
               <td>
                 <ImpactBadge impact={item.impact} tone={item.impactTone} />
               </td>
@@ -65,18 +70,22 @@ function RankingTable({ ranked, selectedId, onSelect }) {
   )
 }
 
-function RecommendedCard({ recommended, onApply }) {
+function RecommendedCard({ recommended, onApply, streamKey }) {
   return (
     <aside className="sc-reco">
       <p className="sc-reco__kicker">Recommended Scenario</p>
       <h3>{recommended.name.replace(' — ', ' – ')}</h3>
-      <p className="sc-reco__action">{recommended.action}</p>
+      <p className="sc-reco__action">
+        <TypewriterValue className="ct-tw-block" text={recommended.action} speed={16} delayMs={200} cursor="▌" streamKey={streamKey} />
+      </p>
       <p className="sc-reco__impact-title">Expected Impact vs Baseline</p>
       <ul className="sc-reco__impacts">
-        {recommended.impactRows.map((row) => (
+        {recommended.impactRows.map((row, i) => (
           <li key={row.label}>
             <span>{row.label}</span>
-            <strong className={row.better ? 'is-good' : 'is-bad'}>{row.value}</strong>
+            <strong className={row.better ? 'is-good' : 'is-bad'}>
+              <TypewriterValue text={row.value} speed={22} delayMs={280 + i * 70} streamKey={streamKey} />
+            </strong>
           </li>
         ))}
       </ul>
@@ -98,6 +107,13 @@ export function ScenariosPage() {
 
   const selected = board.columns.find((item) => item.id === selectedId) ?? board.recommended
   const trendLabels = board.trends.map((day) => day.label)
+  const streamKey = `${lastUpdated.getTime()}:${view}:${selectedId}`
+  const liveFeed = useMemo(() => ([
+    `Recommended ${board.recommended.columnLabel} · score ${Math.round(board.recommended.summary.score)}`,
+    board.recommended.action,
+    ...board.recommended.impactRows.map((row) => `${row.label} ${row.value}`),
+    ...board.alerts.map((alert) => `${alert.title} · ${alert.detail}`),
+  ]), [board])
 
   const refresh = () => {
     setIsRefreshing(true)
@@ -122,7 +138,9 @@ export function ScenariosPage() {
         subtitle="Compare TECHNO what-if plans, rank them on a weighted score, then watch seven-day KPI pressure and alerts."
       />
 
-      <div className="page-body sc-shell">
+      <div className="page-body">
+        <LiveFeedBar strings={liveFeed} streamKey={streamKey} />
+        <div className="sc-shell">
         <nav className="sc-rail" aria-label="Scenario views">
           <p className="sc-rail__title">Scenario workspace</p>
           {VIEWS.map((item) => {
@@ -183,7 +201,7 @@ export function ScenariosPage() {
                               key={cell.id}
                               className={`${cell.id === board.recommended.id ? 'is-pick' : ''} ${cell.warn ? 'is-bad' : ''} ${cell.best ? 'is-good' : ''}`}
                             >
-                              {cell.text}
+                              <TypewriterValue text={cell.text} speed={18} delayMs={60} streamKey={streamKey} />
                             </td>
                           ))}
                         </tr>
@@ -196,9 +214,9 @@ export function ScenariosPage() {
               <div className="sc-stack">
                 <Card className="sc-card" title="Recommendation (Weighted Score)">
                   <p className="sc-lead">Scenario Ranking</p>
-                  <RankingTable ranked={board.ranked} selectedId={selectedId} onSelect={setSelectedId} />
+                  <RankingTable ranked={board.ranked} selectedId={selectedId} onSelect={setSelectedId} streamKey={streamKey} />
                 </Card>
-                <RecommendedCard recommended={board.recommended} onApply={applyScenario} />
+                <RecommendedCard recommended={board.recommended} onApply={applyScenario} streamKey={streamKey} />
               </div>
             </div>
           ) : null}
@@ -207,27 +225,40 @@ export function ScenariosPage() {
             <div className="sc-split">
               <Card className="sc-card" title="Recommendation (Weighted Score)">
                 <p className="sc-lead">Scenario Ranking</p>
-                <RankingTable ranked={board.ranked} selectedId={selectedId} onSelect={setSelectedId} />
+                <RankingTable ranked={board.ranked} selectedId={selectedId} onSelect={setSelectedId} streamKey={streamKey} />
                 <dl className="kv-list sc-why">
                   <div className="kv-row">
                     <dt>Selected plan</dt>
-                    <dd>{selected.name}</dd>
+                    <dd>
+                      <TypewriterValue text={selected.name} speed={18} delayMs={80} streamKey={streamKey} />
+                    </dd>
                   </div>
                   <div className="kv-row">
                     <dt>Weighted score</dt>
-                    <dd>{Math.round(selected.summary.score)} / 100 · rank {board.ranked.find((item) => item.id === selected.id)?.rank}</dd>
+                    <dd>
+                      <TypewriterValue
+                        text={`${Math.round(selected.summary.score)} / 100 · rank ${board.ranked.find((item) => item.id === selected.id)?.rank}`}
+                        speed={16}
+                        delayMs={140}
+                        streamKey={streamKey}
+                      />
+                    </dd>
                   </div>
                   <div className="kv-row">
                     <dt>Why this rank</dt>
-                    <dd>{selected.reason}</dd>
+                    <dd>
+                      <TypewriterValue text={selected.reason} speed={16} delayMs={200} cursor="▌" streamKey={streamKey} />
+                    </dd>
                   </div>
                   <div className="kv-row">
                     <dt>Sorting constraint</dt>
-                    <dd>{selected.summary.bottleneckLabel}</dd>
+                    <dd>
+                      <TypewriterValue text={selected.summary.bottleneckLabel} speed={20} delayMs={260} streamKey={streamKey} />
+                    </dd>
                   </div>
                 </dl>
               </Card>
-              <RecommendedCard recommended={board.recommended} onApply={applyScenario} />
+              <RecommendedCard recommended={board.recommended} onApply={applyScenario} streamKey={streamKey} />
             </div>
           ) : null}
 
@@ -273,7 +304,9 @@ export function ScenariosPage() {
                         <AlertTriangle size={16} />
                         <div>
                           <strong>{alert.title}</strong>
-                          <span>{alert.detail}</span>
+                          <span>
+                            <TypewriterValue className="ct-tw-block" text={alert.detail} speed={16} delayMs={180} streamKey={streamKey} />
+                          </span>
                         </div>
                         <time>{alert.time}</time>
                       </li>
@@ -288,11 +321,15 @@ export function ScenariosPage() {
                   <dl className="kv-list">
                     <div className="kv-row">
                       <dt>Robots (Sorting)</dt>
-                      <dd>{board.watch.robots}</dd>
+                      <dd>
+                        <TypewriterValue text={board.watch.robots} speed={28} delayMs={120} streamKey={streamKey} />
+                      </dd>
                     </div>
                     <div className="kv-row">
                       <dt>Utilization</dt>
-                      <dd>{board.watch.utilization}%</dd>
+                      <dd>
+                        <TypewriterValue text={`${board.watch.utilization}%`} speed={28} delayMs={180} streamKey={streamKey} />
+                      </dd>
                     </div>
                   </dl>
                   <button type="button" className="text-link" onClick={() => applyScenario(selectedId)}>
@@ -307,6 +344,7 @@ export function ScenariosPage() {
             <LayoutList size={14} /> <SlidersHorizontal size={14} />
             Figures come from the same 30-minute TECHNO calculator used in Simulation. Score = 35% SLA + 30% throughput + 20% queue/wait + 15% utilisation near 85%.
           </p>
+        </div>
         </div>
       </div>
     </div>

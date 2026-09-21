@@ -5,7 +5,17 @@ export function formatHours(value) {
 }
 
 export function formatLastUpdated(iso) {
-  const date = typeof iso === 'string' ? new Date(iso) : iso
+  const date =
+    iso instanceof Date
+      ? iso
+      : iso
+        ? new Date(iso)
+        : new Date()
+
+  if (Number.isNaN(date.getTime())) {
+    return '—'
+  }
+
   const time = date.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',

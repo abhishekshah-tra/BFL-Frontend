@@ -23,6 +23,7 @@ import {
   formatItems,
 } from '../../data/simulationConfig'
 import { compareTemplates, runSimulation, sanitizeParams } from '../../lib/simulationEngine'
+import { LiveFeedBar, TypewriterValue } from '../common/TypewriterValue'
 
 const SPEEDS = [0.5, 1, 2, 4]
 const PARAM_FIELDS = [
@@ -124,6 +125,13 @@ export function SimulationPage() {
   const bottleneck = bucket.rows.reduce((worst, row) => (
     row.closingQueue > worst.closingQueue ? row : worst
   ), bucket.rows[0])
+  const streamKey = lastUpdated.getTime()
+  const liveFeed = useMemo(() => ([
+    `${scenarioName} · ${SIM_DATE.label} · ${run.summary.bottleneckStatus === 'green' ? 'flow clear' : `jam at ${run.summary.bottleneckLabel}`}`,
+    `Day throughput ${formatItems(run.summary.throughput)} · peak sort queue ${formatItems(run.summary.peakQueue)}`,
+    `Avg wait ${formatWait(run.summary.avgWait)} · SLA ${formatPct(run.summary.avgSla)} · util ${formatPct(run.summary.avgUtil)}`,
+    `Score ${run.summary.score.toFixed(1)} · inbound ${formatItems(run.summary.inbound)}`,
+  ]), [scenarioName, run.summary])
 
   useEffect(() => {
     if (!playing) return undefined
@@ -201,6 +209,8 @@ export function SimulationPage() {
           <span className="sim-poc">Representative POC Data</span>
           <span>Handoff rule: TECHNO Receiving arrivals = JAFZA outbound this bucket. Downstream arrivals = upstream processed this bucket. Leftover queue carries to the next 30 minutes.</span>
         </div>
+
+        <LiveFeedBar strings={liveFeed} streamKey={streamKey} />
 
         <div className="sim-presets" role="list">
           {SCENARIO_TEMPLATES.map((template) => {
@@ -381,7 +391,7 @@ export function SimulationPage() {
                       {statusLabel(row.status)}
                     </span>
                     <span className="sim-station__queue">
-                      Queue {formatItems(row.closingQueue)}
+                      Queue <TypewriterValue text={formatItems(row.closingQueue)} speed={18} streamKey={streamKey} instant={playing} />
                     </span>
                     <span className="sim-station__bar" aria-hidden="true">
                       <span style={{ height: `${Math.min(100, row.demandCapacityPct)}%` }} />
@@ -394,31 +404,39 @@ export function SimulationPage() {
             <div className="sim-kpis">
               <div className="metric">
                 <div className="metric__label">Inbound this bucket</div>
-                <div className="metric__value">{formatItems(bucket.arrivals)}</div>
+                <div className="metric__value">
+                  <TypewriterValue text={formatItems(bucket.arrivals)} speed={18} delayMs={0} streamKey={streamKey} instant={playing} />
+                </div>
               </div>
               <div className="metric">
                 <div className="metric__label">Dispatched this bucket</div>
-                <div className="metric__value">{formatItems(bucket.rows[6].processed)}</div>
+                <div className="metric__value">
+                  <TypewriterValue text={formatItems(bucket.rows[6].processed)} speed={18} delayMs={40} streamKey={streamKey} instant={playing} />
+                </div>
               </div>
               <div className="metric">
                 <div className="metric__label">Sorting queue</div>
                 <div className={`metric__value ${bottleneck.processId === 'sorting' ? 'is-danger' : ''}`}>
-                  {formatItems(bucket.rows[4].closingQueue)}
+                  <TypewriterValue text={formatItems(bucket.rows[4].closingQueue)} speed={18} delayMs={80} streamKey={streamKey} instant={playing} />
                 </div>
               </div>
               <div className="metric">
                 <div className="metric__label">Sorting wait</div>
-                <div className="metric__value">{formatWait(bucket.rows[4].avgWaitMin)}</div>
+                <div className="metric__value">
+                  <TypewriterValue text={formatWait(bucket.rows[4].avgWaitMin)} speed={20} delayMs={120} streamKey={streamKey} instant={playing} />
+                </div>
               </div>
               <div className="metric">
                 <div className="metric__label">Sorting SLA</div>
                 <div className={`metric__value ${bucket.rows[4].slaPct < 80 ? 'is-danger' : ''}`}>
-                  {formatPct(bucket.rows[4].slaPct)}
+                  <TypewriterValue text={formatPct(bucket.rows[4].slaPct)} speed={22} delayMs={160} streamKey={streamKey} instant={playing} />
                 </div>
               </div>
               <div className="metric">
                 <div className="metric__label">Day throughput</div>
-                <div className="metric__value">{formatItems(run.summary.throughput)}</div>
+                <div className="metric__value">
+                  <TypewriterValue text={formatItems(run.summary.throughput)} speed={18} delayMs={200} streamKey={streamKey} instant={playing} />
+                </div>
               </div>
             </div>
 
@@ -484,29 +502,64 @@ export function SimulationPage() {
               <div className="kv-row">
                 <dt>Available work</dt>
                 <dd>
-                  {formatItems(selectedRow.openingQueue)} opening + {formatItems(selectedRow.arrivals)} arrivals = {formatItems(selectedRow.availableWork)}
+                  <TypewriterValue
+                    text={`${formatItems(selectedRow.openingQueue)} opening + ${formatItems(selectedRow.arrivals)} arrivals = ${formatItems(selectedRow.availableWork)}`}
+                    speed={14}
+                    delayMs={80}
+                    streamKey={`${streamKey}:${selectedProcess}`}
+                    instant={playing}
+                  />
                 </dd>
               </div>
               {selectedRow.capacityParts.map((part) => (
                 <div className="kv-row" key={part.id}>
                   <dt>{part.label}</dt>
                   <dd>
-                    {formatItems(part.value)}
-                    {part.id === selectedRow.binding.id ? ' · binding' : ''}
+                    <TypewriterValue
+                      text={`${formatItems(part.value)}${part.id === selectedRow.binding.id ? ' · binding' : ''}`}
+                      speed={16}
+                      delayMs={120}
+                      streamKey={`${streamKey}:${selectedProcess}`}
+                      instant={playing}
+                    />
                   </dd>
                 </div>
               ))}
               <div className="kv-row">
                 <dt>Processed</dt>
-                <dd>min({formatItems(selectedRow.availableWork)}, {formatItems(selectedRow.effectiveCapacity)}) = {formatItems(selectedRow.processed)}</dd>
+                <dd>
+                  <TypewriterValue
+                    text={`min(${formatItems(selectedRow.availableWork)}, ${formatItems(selectedRow.effectiveCapacity)}) = ${formatItems(selectedRow.processed)}`}
+                    speed={14}
+                    delayMs={160}
+                    streamKey={`${streamKey}:${selectedProcess}`}
+                    instant={playing}
+                  />
+                </dd>
               </div>
               <div className="kv-row">
                 <dt>Closing queue</dt>
-                <dd>{formatItems(selectedRow.closingQueue)} carried into {bucketLabel(Math.min(run.buckets.length - 1, cursor + 1))}</dd>
+                <dd>
+                  <TypewriterValue
+                    text={`${formatItems(selectedRow.closingQueue)} carried into ${bucketLabel(Math.min(run.buckets.length - 1, cursor + 1))}`}
+                    speed={14}
+                    delayMs={200}
+                    streamKey={`${streamKey}:${selectedProcess}`}
+                    instant={playing}
+                  />
+                </dd>
               </div>
               <div className="kv-row">
                 <dt>Wait approx.</dt>
-                <dd>(opening + closing) / 2 ÷ process rate = {formatWait(selectedRow.avgWaitMin)}</dd>
+                <dd>
+                  <TypewriterValue
+                    text={`(opening + closing) / 2 ÷ process rate = ${formatWait(selectedRow.avgWaitMin)}`}
+                    speed={14}
+                    delayMs={240}
+                    streamKey={`${streamKey}:${selectedProcess}`}
+                    instant={playing}
+                  />
+                </dd>
               </div>
             </dl>
           </Card>
@@ -543,12 +596,24 @@ export function SimulationPage() {
                         {item.isBest ? ' · best' : ''}
                         {item.isWorstQueue ? ' · worst queue' : ''}
                       </td>
-                      <td>{formatItems(item.summary.throughput)}</td>
-                      <td>{formatItems(item.summary.peakQueue)}</td>
-                      <td>{formatWait(item.summary.avgWait)}</td>
-                      <td>{formatPct(item.summary.avgSla)}</td>
-                      <td>{formatPct(item.summary.avgUtil)}</td>
-                      <td>{item.summary.score.toFixed(1)}</td>
+                      <td>
+                        <TypewriterValue text={formatItems(item.summary.throughput)} speed={18} delayMs={80} streamKey={streamKey} />
+                      </td>
+                      <td>
+                        <TypewriterValue text={formatItems(item.summary.peakQueue)} speed={18} delayMs={120} streamKey={streamKey} />
+                      </td>
+                      <td>
+                        <TypewriterValue text={formatWait(item.summary.avgWait)} speed={20} delayMs={160} streamKey={streamKey} />
+                      </td>
+                      <td>
+                        <TypewriterValue text={formatPct(item.summary.avgSla)} speed={20} delayMs={200} streamKey={streamKey} />
+                      </td>
+                      <td>
+                        <TypewriterValue text={formatPct(item.summary.avgUtil)} speed={20} delayMs={240} streamKey={streamKey} />
+                      </td>
+                      <td>
+                        <TypewriterValue text={item.summary.score.toFixed(1)} speed={24} delayMs={280} streamKey={streamKey} />
+                      </td>
                     </tr>
                   ))}
                 </tbody>

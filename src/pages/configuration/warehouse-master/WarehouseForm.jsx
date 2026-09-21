@@ -25,9 +25,15 @@ export default function WarehouseForm({
   form,
   setForm,
   readOnly = false,
+  disableCode = false,
 }) {
   const handleChange = (event) => {
-    const { name, value, checked, type } = event.target;
+    const { name, checked, type } = event.target;
+    let { value } = event.target;
+
+    if (name === 'code') {
+      value = value.toUpperCase();
+    }
 
     setForm((previous) => ({
       ...previous,
@@ -44,7 +50,7 @@ export default function WarehouseForm({
           value={form.code}
           onChange={handleChange}
           required
-          disabled={readOnly}
+          disabled={readOnly || disableCode}
           placeholder="e.g. TECHNO"
         />
       </div>

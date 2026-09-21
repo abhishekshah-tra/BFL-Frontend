@@ -8,6 +8,7 @@ import { Header } from "@/components/layout/Header";
 import { useLayout } from "@/components/layout/LayoutContext";
 import { PersonasScope } from "./PersonasScope";
 import { usePersonasUI } from "./PersonasUI";
+import { LiveFeedBar, TypewriterValue } from "@/components/common/TypewriterValue";
 const PROC_LAST_UPDATED = /* @__PURE__ */ new Date("2025-05-20T10:30:00+04:00");
 const WAREHOUSES = ["TECHNO", "YOTO", "JAFZA"];
 const PROCESSES = [
@@ -60,6 +61,14 @@ function isWarehouse(value) {
 function isProcess(value) {
   return !!value && value in processData;
 }
+function buildProcessLiveFeed(warehouse, process, detail) {
+  return [
+    `${warehouse} · ${process} · status ${detail.status}`,
+    `Queue ${detail.queue} · wait ${detail.wait} · utilization ${detail.util}%`,
+    `SLA ${detail.sla}% · incoming ${detail.incoming} · capacity ${detail.processing}`,
+    `Downstream impact ${detail.downstream} · ${detail.journeys}`,
+  ];
+}
 function queryValue(query, key) {
   const value = query[key];
   return typeof value === "string" ? value : null;
@@ -84,14 +93,19 @@ function ProcessContent() {
     if (isProcess(p)) setProcess(p);
   }, [router.isReady, router.query]);
   const detail = processData[process];
+  const streamKey = `${warehouse}:${process}`;
+  const liveFeed = useMemo(
+    () => buildProcessLiveFeed(warehouse, process, detail),
+    [warehouse, process, detail]
+  );
   const gaugeOffset = useMemo(
     () => 188.5 * (1 - detail.util / 100),
     [detail.util]
   );
   return <div id="page-process" className="page-view active">
-      <div className="page-banner orange">
+      {/* <div className="page-banner orange">
         3. WAREHOUSE MANAGER LANDING PAGE – PROCESS / RESOURCE DETAILS
-      </div>
+      </div> */}
 
       <div className="proc-header-block">
         <h2>Process / Resource Details</h2>
@@ -135,16 +149,22 @@ function ProcessContent() {
         </div>
       </div>
 
+      <LiveFeedBar strings={liveFeed} streamKey={streamKey} />
+
       <div className="wm-top-row">
         <div className="widget-card critical-status">
           <div className="section-title">Current Status</div>
           <div className="crit-label" style={{ color: detail.statusColor }}>
-            {detail.status}
+            <TypewriterValue text={detail.status} speed={40} delayMs={0} streamKey={streamKey} />
           </div>
           <div className="crit-sub">
-            Queue: <strong>{detail.queue}</strong>
+            Queue: <strong>
+              <TypewriterValue text={detail.queue} speed={24} delayMs={120} streamKey={streamKey} />
+            </strong>
             <br />
-            Avg. Waiting Time: <strong>{detail.wait}</strong>
+            Avg. Waiting Time: <strong>
+              <TypewriterValue text={detail.wait} speed={24} delayMs={180} streamKey={streamKey} />
+            </strong>
           </div>
         </div>
 
@@ -189,14 +209,20 @@ function ProcessContent() {
             </text>
           </svg>
           <div className="gauge-units-line">
-            <span className="workload-red">{detail.workload.toLocaleString()}</span> /{" "}
-            <span>{detail.capacity.toLocaleString()}</span> Units/hr
+            <span className="workload-red">
+              <TypewriterValue text={detail.workload.toLocaleString()} speed={24} delayMs={160} streamKey={streamKey} />
+            </span> /{" "}
+            <span>
+              <TypewriterValue text={detail.capacity.toLocaleString()} speed={24} delayMs={200} streamKey={streamKey} />
+            </span> Units/hr
           </div>
         </div>
 
         <div className="widget-card sla-card">
           <div className="section-title">SLA Achievement</div>
-          <div className="sla-value">{detail.sla}%</div>
+          <div className="sla-value">
+            <TypewriterValue text={`${detail.sla}%`} speed={36} delayMs={80} streamKey={streamKey} />
+          </div>
           <svg
     className="sparkline-area"
     viewBox="0 0 140 48"
@@ -232,7 +258,7 @@ function ProcessContent() {
       <div className="resource-breakdown-card">
         <div className="section-title">Resource Breakdown</div>
         <div className="resource-grid">
-          {RESOURCES.map((res) => <div
+          {RESOURCES.map((res, i) => <div
     key={res.label}
     className="resource-card"
     role="button"
@@ -240,7 +266,9 @@ function ProcessContent() {
     onClick={() => showModal(res.label, res.detail)}
   >
               <div className="res-label">{res.label}</div>
-              <div className="res-value">{res.value}</div>
+              <div className="res-value">
+                <TypewriterValue text={res.value} speed={22} delayMs={220 + i * 70} streamKey={streamKey} />
+              </div>
               <div className="res-bar-row">
                 <div className="progress-bar">
                   <div
@@ -248,7 +276,9 @@ function ProcessContent() {
     style={{ width: `${res.pct}%` }}
   />
                 </div>
-                <span className="res-pct">{res.pct}%</span>
+                <span className="res-pct">
+                  <TypewriterValue text={`${res.pct}%`} speed={30} delayMs={280 + i * 70} streamKey={streamKey} />
+                </span>
               </div>
             </div>)}
         </div>
@@ -294,24 +324,32 @@ function ProcessContent() {
           <ul className="proc-details-list">
             <li>
               <span>Incoming Rate</span>
-              <strong>{detail.incoming}</strong>
+              <strong>
+                <TypewriterValue text={detail.incoming} speed={22} delayMs={300} streamKey={streamKey} />
+              </strong>
             </li>
             <li>
               <span>Processing Capacity</span>
-              <strong>{detail.processing}</strong>
+              <strong>
+                <TypewriterValue text={detail.processing} speed={22} delayMs={340} streamKey={streamKey} />
+              </strong>
             </li>
             <li>
               <span>Avg. Scan Time / Item</span>
-              <strong>{detail.scan}</strong>
+              <strong>
+                <TypewriterValue text={detail.scan} speed={24} delayMs={380} streamKey={streamKey} />
+              </strong>
             </li>
             <li>
               <span>Avg. Process Time / Item</span>
-              <strong>{detail.proctime}</strong>
+              <strong>
+                <TypewriterValue text={detail.proctime} speed={24} delayMs={420} streamKey={streamKey} />
+              </strong>
             </li>
             <li>
               <span>Downstream Impact</span>
               <strong className={detail.downstreamClass || void 0}>
-                {detail.downstream}
+                <TypewriterValue text={detail.downstream} speed={28} delayMs={460} streamKey={streamKey} />
               </strong>
             </li>
           </ul>
@@ -322,7 +360,9 @@ function ProcessContent() {
         <div className="widget-card affected-card">
           <div className="section-title">Affected Items / Journeys</div>
           <div className="affected-sub">View items impacted by this bottleneck</div>
-          <div className="affected-value">{detail.journeys}</div>
+          <div className="affected-value">
+            <TypewriterValue text={detail.journeys} speed={20} delayMs={500} cursor="▌" streamKey={streamKey} />
+          </div>
           <span
     className="insight-link"
     role="button"

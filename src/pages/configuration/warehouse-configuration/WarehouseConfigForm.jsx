@@ -17,20 +17,16 @@ import CommonSelect from '@/components/common/CommonSelect';
 import CommonSwitch from '@/components/common/CommonSwitch';
 import {
   PROCESS_MASTER_DATA,
+  SLA_UNIT_OPTIONS,
   formatProcessSla,
+  normalizeSlaUnit,
 } from '@/data/processMaster';
-
-export const RESOURCE_TYPE_OPTIONS = [
-  { value: 'Operator', label: 'Operator' },
-  { value: 'Robot', label: 'Robot' },
-  { value: 'Chute', label: 'Chute' },
-];
-
-export const PRODUCTIVITY_UNIT_OPTIONS = [
-  { value: 'Items/Hour', label: 'Items/Hour' },
-  { value: 'Parcels/Hour', label: 'Parcels/Hour' },
-  { value: 'Orders/Hour', label: 'Orders/Hour' },
-];
+import {
+  PRODUCTIVITY_UNIT,
+  PRODUCTIVITY_UNIT_OPTIONS,
+  RESOURCE_TYPE_OPTIONS,
+} from '@/data/warehouseConfiguration';
+import { getRefId } from '@/utils/api';
 
 export const createEmptyResource = () => ({
   id: `res-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -39,7 +35,7 @@ export const createEmptyResource = () => ({
   plannedQuantity: '',
   availableQuantity: '',
   productivity: '',
-  unit: 'Items/Hour',
+  unit: PRODUCTIVITY_UNIT.ITEMS_HOUR,
   isActive: true,
 });
 
@@ -62,25 +58,41 @@ export default function WarehouseConfigForm({
   form,
   setForm,
   warehouses = [],
+  processes = PROCESS_MASTER_DATA,
   readOnly = false,
+  disableWarehouse = false,
 }) {
+  const selectedWarehouseId = getRefId(form.warehouseId);
+
   const warehouseOptions = warehouses
-    .filter((warehouse) => warehouse.isActive)
+    .filter(
+      (warehouse) =>
+        warehouse.isActive || getRefId(warehouse._id) === selectedWarehouseId,
+    )
     .map((warehouse) => ({
-      value: warehouse._id,
+      value: getRefId(warehouse._id),
       label: `${warehouse.code} — ${warehouse.name}`,
     }));
 
   const processById = Object.fromEntries(
-    PROCESS_MASTER_DATA.map((process) => [process._id, process]),
+    processes.map((process) => [getRefId(process._id), process]),
   );
 
-  const processOptions = PROCESS_MASTER_DATA.filter(
-    (process) => process.isActive,
-  )
-    .sort((a, b) => a.sequence - b.sequence)
+  const usedProcessIds = new Set(
+    [
+      ...(form.processes || []).map((item) => getRefId(item.processId)),
+      ...(form.resources || []).map((item) => getRefId(item.processId)),
+    ].filter(Boolean),
+  );
+
+  const processOptions = processes
+    .filter(
+      (process) =>
+        process.isActive || usedProcessIds.has(getRefId(process._id)),
+    )
+    .sort((a, b) => (Number(a.sequence) || 0) - (Number(b.sequence) || 0))
     .map((process) => ({
-      value: process._id,
+      value: getRefId(process._id),
       label: process.name,
     }));
 
@@ -93,12 +105,12 @@ export default function WarehouseConfigForm({
     }));
   };
 
-  const handleEnabledChange = (processId, enabled) => {
+  const handleProcessChange = (processId, field, value) => {
     setForm((previous) => ({
       ...previous,
       processes: previous.processes.map((item) =>
         item.processId === processId
-          ? { ...item, enabled }
+          ? { ...item, [field]: value }
           : item,
       ),
     }));
@@ -141,7 +153,7 @@ export default function WarehouseConfigForm({
           onChange={handleChange}
           options={warehouseOptions}
           required
-          disabled={readOnly}
+          disabled={readOnly || disableWarehouse}
           placeholder="Select Warehouse"
         />
       </div>
@@ -200,8 +212,8 @@ export default function WarehouseConfigForm({
             color: 'var(--text-secondary)',
           }}
         >
-          Capacity and SLA are inherited from Process Master. Enable or
-          disable each process for this warehouse.
+          Capacity and SLA default from Process Master and can be
+          overridden for this warehouse. Enable or disable each process.
         </Typography>
 
         <Table size="small" sx={tableSx}>
@@ -209,33 +221,111 @@ export default function WarehouseConfigForm({
             <TableRow>
               <TableCell>Process</TableCell>
               <TableCell align="center">Sequence</TableCell>
-              <TableCell align="right">Capacity</TableCell>
-              <TableCell align="center">SLA</TableCell>
+              <TableCell align="right" sx={{ minWidth: 120 }}>
+                Capacity / Hour
+              </TableCell>
+              <TableCell sx={{ minWidth: 220 }}>SLA</TableCell>
               <TableCell align="center">Enabled</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {form.processes.map((item) => {
-              const process = processById[item.processId];
+            {form.processes.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={5}
+                  align="center"
+                  sx={{ py: 3, color: 'var(--text-secondary)' }}
+                >
+                  No processes available. Add processes in Process Master first.
+                </TableCell>
+              </TableRow>
+            ) : (
+            form.processes.map((item) => {
+              const process = processById[getRefId(item.processId)];
 
-              if (!process) return null;
+              if (!process) {
+                return (
+                  <TableRow key={item.processId || 'unknown'}>
+                    <TableCell colSpan={5} sx={{ color: 'var(--text-secondary)' }}>
+                      Unknown process
+                    </TableCell>
+                  </TableRow>
+                );
+              }
+
+              const capacity =
+                item.capacityPerHour ?? process.capacityPerHour ?? '';
+              const sla = item.sla ?? process.sla ?? '';
+              const slaUnit = normalizeSlaUnit(
+                item.slaUnit || process.slaUnit,
+              );
 
               return (
                 <TableRow key={item.processId}>
                   <TableCell>{process.name}</TableCell>
                   <TableCell align="center">{process.sequence}</TableCell>
                   <TableCell align="right">
-                    {Number(process.capacityPerHour).toLocaleString()}
+                    {readOnly ? (
+                      Number(capacity).toLocaleString()
+                    ) : (
+                      <CommonInput
+                        name={`capacityPerHour-${item.processId}`}
+                        type="number"
+                        value={capacity}
+                        onChange={(event) =>
+                          handleProcessChange(
+                            item.processId,
+                            'capacityPerHour',
+                            event.target.value,
+                          )
+                        }
+                        inputProps={{ min: 0 }}
+                      />
+                    )}
                   </TableCell>
-                  <TableCell align="center">
-                    {formatProcessSla(process.sla, process.slaUnit)}
+                  <TableCell>
+                    {readOnly ? (
+                      formatProcessSla(sla, slaUnit)
+                    ) : (
+                      <div className="d-flex gap-2 align-items-center">
+                        <CommonInput
+                          name={`sla-${item.processId}`}
+                          type="number"
+                          value={sla}
+                          onChange={(event) =>
+                            handleProcessChange(
+                              item.processId,
+                              'sla',
+                              event.target.value,
+                            )
+                          }
+                          inputProps={{ min: 0 }}
+                        />
+                        <CommonSelect
+                          name={`slaUnit-${item.processId}`}
+                          value={slaUnit}
+                          onChange={(event) =>
+                            handleProcessChange(
+                              item.processId,
+                              'slaUnit',
+                              event.target.value,
+                            )
+                          }
+                          options={SLA_UNIT_OPTIONS}
+                          placeholder="Unit"
+                          required
+                          sx={{ minWidth: 120 }}
+                        />
+                      </div>
+                    )}
                   </TableCell>
                   <TableCell align="center">
                     <Checkbox
                       checked={Boolean(item.enabled)}
                       onChange={(event) =>
-                        handleEnabledChange(
+                        handleProcessChange(
                           item.processId,
+                          'enabled',
                           event.target.checked,
                         )
                       }
@@ -245,7 +335,8 @@ export default function WarehouseConfigForm({
                   </TableCell>
                 </TableRow>
               );
-            })}
+            })
+            )}
           </TableBody>
         </Table>
       </div>
@@ -348,7 +439,7 @@ export default function WarehouseConfigForm({
                   </TableCell>
                   <TableCell>
                     {readOnly ? (
-                      processById[resource.processId]?.name || '-'
+                      processById[getRefId(resource.processId)]?.name || '-'
                     ) : (
                       <CommonSelect
                         name={`processId-${resource.id}`}

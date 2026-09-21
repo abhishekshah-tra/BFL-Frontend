@@ -9,6 +9,7 @@ import { Header } from "@/components/layout/Header";
 import { useLayout } from "@/components/layout/LayoutContext";
 import { PersonasScope } from "./PersonasScope";
 import { usePersonasUI } from "./PersonasUI";
+import { LiveFeedBar, TypewriterValue } from "@/components/common/TypewriterValue";
 const OPS_LAST_UPDATED = /* @__PURE__ */ new Date("2025-05-20T10:30:00+04:00");
 const WAREHOUSES = ["TECHNO", "YOTO", "JAFZA"];
 const TIMEFRAME_LABELS = {
@@ -44,6 +45,15 @@ const SCENARIOS = {
 };
 function isWarehouse(value) {
   return value === "TECHNO" || value === "YOTO" || value === "JAFZA";
+}
+function buildOpsLiveFeed(warehouse, data) {
+  const critical = data.processes.filter((row) => row.status === "Critical").length;
+  return [
+    `${warehouse} throughput ${data.kpis.throughput} ${data.kpis.unit} · ${data.kpis.throughputTrend}`,
+    `Capacity ${data.kpis.capacity} · SLA ${data.kpis.sla} · wait ${data.kpis.wait} mins · ${data.kpis.alerts} alerts`,
+    `${data.insight.subtitle} · ${data.insight.text}`,
+    `${critical} critical process${critical === 1 ? "" : "es"} on the floor`,
+  ];
 }
 function RoboIcon() {
   return <svg
@@ -94,6 +104,8 @@ function OperationsContent() {
     () => OPS_TIMEFRAME_DATA[displayTf][displayWh],
     [displayTf, displayWh]
   );
+  const streamKey = `${displayTf}:${displayWh}`;
+  const liveFeed = useMemo(() => buildOpsLiveFeed(displayWh, data), [displayWh, data]);
   const fetchData = useCallback(
     (tf, wh, opts = {}) => {
       setLoading(true);
@@ -159,6 +171,8 @@ function OperationsContent() {
         </div>
       </div>
 
+      <LiveFeedBar strings={liveFeed} streamKey={streamKey} />
+
       <div className="kpi-row" id="ops-kpi-row">
         <div
     className="kpi-card"
@@ -169,11 +183,13 @@ function OperationsContent() {
           <div className="kpi-icon">📦</div>
           <div className="kpi-label">Throughput</div>
           <div className="kpi-value">
-            <span>{data.kpis.throughput}</span>{" "}
+            <span>
+              <TypewriterValue text={data.kpis.throughput} speed={28} delayMs={0} streamKey={streamKey} />
+            </span>{" "}
             <span className="kpi-value-sm">{data.kpis.unit}</span>
           </div>
           <div className={`kpi-trend ${data.kpis.throughputTrendClass}`}>
-            {data.kpis.throughputTrend}
+            <TypewriterValue text={data.kpis.throughputTrend} speed={18} delayMs={180} streamKey={streamKey} />
           </div>
         </div>
         <div
@@ -184,9 +200,11 @@ function OperationsContent() {
   >
           <div className="kpi-icon">📊</div>
           <div className="kpi-label">Capacity Utilization</div>
-          <div className="kpi-value">{data.kpis.capacity}</div>
+          <div className="kpi-value">
+            <TypewriterValue text={data.kpis.capacity} speed={36} delayMs={80} streamKey={streamKey} />
+          </div>
           <div className={`kpi-trend ${data.kpis.capacityTrendClass}`}>
-            {data.kpis.capacityTrend}
+            <TypewriterValue text={data.kpis.capacityTrend} speed={18} delayMs={240} streamKey={streamKey} />
           </div>
         </div>
         <div
@@ -197,9 +215,11 @@ function OperationsContent() {
   >
           <div className="kpi-icon">✅</div>
           <div className="kpi-label">SLA Achievement</div>
-          <div className="kpi-value">{data.kpis.sla}</div>
+          <div className="kpi-value">
+            <TypewriterValue text={data.kpis.sla} speed={36} delayMs={160} streamKey={streamKey} />
+          </div>
           <div className={`kpi-trend ${data.kpis.slaTrendClass}`}>
-            {data.kpis.slaTrend}
+            <TypewriterValue text={data.kpis.slaTrend} speed={18} delayMs={300} streamKey={streamKey} />
           </div>
         </div>
         <div
@@ -211,10 +231,13 @@ function OperationsContent() {
           <div className="kpi-icon">⏱️</div>
           <div className="kpi-label">Avg. Waiting Time</div>
           <div className="kpi-value">
-            <span>{data.kpis.wait}</span> <span className="kpi-value-sm">mins</span>
+            <span>
+              <TypewriterValue text={data.kpis.wait} speed={40} delayMs={220} streamKey={streamKey} />
+            </span>{" "}
+            <span className="kpi-value-sm">mins</span>
           </div>
           <div className={`kpi-trend ${data.kpis.waitTrendClass}`}>
-            {data.kpis.waitTrend}
+            <TypewriterValue text={data.kpis.waitTrend} speed={18} delayMs={360} streamKey={streamKey} />
           </div>
         </div>
         <div
@@ -226,7 +249,7 @@ function OperationsContent() {
           <div className="kpi-icon">🔔</div>
           <div className="kpi-label">Active Alerts</div>
           <div className="kpi-value" style={{ color: "#dc2626" }}>
-            {data.kpis.alerts}
+            <TypewriterValue text={data.kpis.alerts} speed={50} delayMs={280} streamKey={streamKey} />
           </div>
           <div
     className="kpi-link"
@@ -283,7 +306,7 @@ function OperationsContent() {
             </tr>
           </thead>
           <tbody>
-            {data.processes.map((row) => <tr
+            {data.processes.map((row, i) => <tr
     key={row.key}
     className={`${row.rowCritical ? "row-critical" : ""}${row.key === "Robo Sorting" ? " selected" : ""}`}
     onClick={() => openProcess(row.key)}
@@ -291,12 +314,24 @@ function OperationsContent() {
                 <td>
                   {row.key === "Robo Sorting" ? "Robo / Manual Sorting" : row.key}
                 </td>
-                <td className={row.workloadClass}>{row.workload}</td>
-                <td className={row.capacityClass}>{row.capacity}</td>
-                <td className={row.utilClass}>{row.util}</td>
-                <td className={row.queueClass}>{row.queue}</td>
-                <td className={row.waitClass}>{row.wait}</td>
-                <td className={row.slaClass}>{row.sla}</td>
+                <td className={row.workloadClass}>
+                  <TypewriterValue text={row.workload} speed={22} delayMs={200 + i * 40} streamKey={streamKey} />
+                </td>
+                <td className={row.capacityClass}>
+                  <TypewriterValue text={row.capacity} speed={22} delayMs={220 + i * 40} streamKey={streamKey} />
+                </td>
+                <td className={row.utilClass}>
+                  <TypewriterValue text={row.util} speed={24} delayMs={240 + i * 40} streamKey={streamKey} />
+                </td>
+                <td className={row.queueClass}>
+                  <TypewriterValue text={row.queue} speed={22} delayMs={260 + i * 40} streamKey={streamKey} />
+                </td>
+                <td className={row.waitClass}>
+                  <TypewriterValue text={row.wait} speed={24} delayMs={280 + i * 40} streamKey={streamKey} />
+                </td>
+                <td className={row.slaClass}>
+                  <TypewriterValue text={row.sla} speed={24} delayMs={300 + i * 40} streamKey={streamKey} />
+                </td>
                 <td>
                   <span className={`status-pill ${row.statusClass}`}>{row.status}</span>
                 </td>
@@ -308,8 +343,12 @@ function OperationsContent() {
       <div className="bottom-grid-2">
         <div className="insight-box widget-card">
           <div className="section-title">Bottleneck Insight</div>
-          <div className="insight-subtitle">{data.insight.subtitle}</div>
-          <div className="insight-text">{data.insight.text}</div>
+          <div className="insight-subtitle">
+            <TypewriterValue text={data.insight.subtitle} speed={22} delayMs={360} streamKey={streamKey} />
+          </div>
+          <div className="insight-text">
+            <TypewriterValue className="ct-tw-block" text={data.insight.text} speed={16} delayMs={420} cursor="▌" streamKey={streamKey} />
+          </div>
           <span
     className="insight-link"
     role="button"

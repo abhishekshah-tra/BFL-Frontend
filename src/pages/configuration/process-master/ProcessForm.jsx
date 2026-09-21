@@ -4,20 +4,21 @@ import CommonInput from '@/components/common/CommonInput';
 import CommonSelect from '@/components/common/CommonSelect';
 import CommonTextArea from '@/components/common/CommonTextArea';
 import CommonSwitch from '@/components/common/CommonSwitch';
-
-const SLA_UNIT_OPTIONS = [
-  { value: 'Minutes', label: 'Minutes' },
-  { value: 'Hours', label: 'Hours' },
-  { value: 'Days', label: 'Days' },
-];
+import { SLA_UNIT_OPTIONS } from '@/data/processMaster';
 
 export default function ProcessForm({
   form,
   setForm,
   readOnly = false,
+  disableCode = false,
 }) {
   const handleChange = (event) => {
-    const { name, value, checked, type } = event.target;
+    const { name, checked, type } = event.target;
+    let { value } = event.target;
+
+    if (name === 'code') {
+      value = value.toUpperCase();
+    }
 
     setForm((previous) => ({
       ...previous,
@@ -34,8 +35,8 @@ export default function ProcessForm({
           value={form.code}
           onChange={handleChange}
           required
-          disabled={readOnly}
-          placeholder="e.g. SORTING"
+          disabled={readOnly || disableCode}
+          placeholder="e.g. PICKING"
         />
       </div>
 
@@ -47,7 +48,7 @@ export default function ProcessForm({
           onChange={handleChange}
           required
           disabled={readOnly}
-          placeholder="e.g. Sorting"
+          placeholder="e.g. Picking Process"
         />
       </div>
 
@@ -71,6 +72,7 @@ export default function ProcessForm({
           onChange={handleChange}
           required
           disabled={readOnly}
+          inputProps={{ min: 1 }}
         />
       </div>
 
@@ -83,6 +85,7 @@ export default function ProcessForm({
           onChange={handleChange}
           required
           disabled={readOnly}
+          inputProps={{ min: 0 }}
         />
       </div>
 
@@ -95,6 +98,7 @@ export default function ProcessForm({
           onChange={handleChange}
           required
           disabled={readOnly}
+          inputProps={{ min: 0 }}
         />
       </div>
 

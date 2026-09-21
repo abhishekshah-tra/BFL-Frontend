@@ -1,7 +1,7 @@
-'use client';
-
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
 import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
 import AddIcon from '@mui/icons-material/Add';
 
 import AppDataGrid from '@/components/common/AppDataGrid';
@@ -12,7 +12,16 @@ import RowActions from '@/components/common/RowActions';
 import { Header } from '@/components/layout/Header';
 import { useLayout } from '@/components/layout/LayoutContext';
 
-import { WAREHOUSE_MASTER_DATA } from '@/data/warehouseMaster';
+import { sortWarehouses } from '@/data/warehouseMaster';
+import {
+  createWarehouse,
+  deleteWarehouse,
+  getWarehouseById,
+  getWarehouses,
+  updateWarehouse,
+} from '@/services/warehouse.service';
+import { getChangedFields, getErrorMessage } from '@/utils/api';
+import { serializeProps } from '@/utils/ssr';
 
 import WarehouseForm from './WarehouseForm';
 
@@ -26,13 +35,69 @@ const emptyForm = {
   isActive: true,
 };
 
-export default function WarehouseMasterPage() {
-  const { onMenuClick } = useLayout();
+const mapRowToForm = (row) => ({
+  code: row.code || '',
+  name: row.name || '',
+  description: row.description || '',
+  location: row.location || '',
+  country: row.country || '',
+  timeZone: row.timeZone || '',
+  isActive: row.isActive ?? true,
+});
 
-  const [rows, setRows] = useState(WAREHOUSE_MASTER_DATA);
-  const [lastUpdated, setLastUpdated] = useState(() => new Date());
+const buildPayload = (form) => ({
+  code: form.code.trim().toUpperCase(),
+  name: form.name.trim(),
+  description: form.description?.trim() || '',
+  location: form.location?.trim() || '',
+  country: form.country || '',
+  timeZone: form.timeZone || '',
+  isActive: Boolean(form.isActive),
+});
+
+const validateForm = (form) => {
+  if (!form.code?.trim() || !form.name?.trim()) {
+    return 'Warehouse code and name are required.';
+  }
+
+  return '';
+};
+
+export async function getServerSideProps() {
+  try {
+    const rows = await getWarehouses();
+
+    return {
+      props: serializeProps({
+        initialRows: sortWarehouses(Array.isArray(rows) ? rows : []),
+        fetchedAt: new Date().toISOString(),
+        initialError: '',
+      }),
+    };
+  } catch (error) {
+    return {
+      props: {
+        initialRows: [],
+        fetchedAt: new Date().toISOString(),
+        initialError: getErrorMessage(error, 'Failed to load warehouses.'),
+      },
+    };
+  }
+}
+
+export default function WarehouseMasterPage({
+  initialRows,
+  fetchedAt,
+  initialError = '',
+}) {
+  const { onMenuClick } = useLayout();
+  const router = useRouter();
+
+  const [rows, setRows] = useState(initialRows);
+  const [lastUpdated, setLastUpdated] = useState(() => new Date(fetchedAt));
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(initialError);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -41,106 +106,116 @@ export default function WarehouseMasterPage() {
   const [selectedRow, setSelectedRow] = useState(null);
   const [form, setForm] = useState({ ...emptyForm });
 
-  const handleRefresh = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setLastUpdated(new Date());
+  useEffect(() => {
+    setRows(initialRows);
+    setError(initialError);
+    setLastUpdated(new Date(fetchedAt));
+    setLoading(false);
+  }, [initialRows, initialError, fetchedAt]);
+
+  const loadWarehouses = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      await router.replace(router.asPath);
+    } catch (loadError) {
+      setError(getErrorMessage(loadError, 'Failed to load warehouses.'));
       setLoading(false);
-    }, 300);
+    }
+  };
+
+  const openDialog = (nextMode, row = null, nextForm = emptyForm) => {
+    setMode(nextMode);
+    setSelectedRow(row);
+    setForm({ ...nextForm });
+    setError('');
+    setDialogOpen(true);
   };
 
   const handleAdd = () => {
-    setMode('add');
-    setSelectedRow(null);
-    setForm({ ...emptyForm });
-    setDialogOpen(true);
+    openDialog('add', null, { ...emptyForm });
   };
 
-  const handleView = (row) => {
-    setMode('view');
-    setSelectedRow(row);
-    setForm({
-      code: row.code || '',
-      name: row.name || '',
-      description: row.description || '',
-      location: row.location || '',
-      country: row.country || '',
-      timeZone: row.timeZone || '',
-      isActive: row.isActive ?? true,
-    });
-    setDialogOpen(true);
+  const hydrateRow = async (row) => {
+    try {
+      const fresh = await getWarehouseById(row._id);
+      return fresh || row;
+    } catch {
+      return row;
+    }
   };
 
-  const handleEdit = (row) => {
-    setMode('edit');
-    setSelectedRow(row);
-    setForm({
-      code: row.code || '',
-      name: row.name || '',
-      description: row.description || '',
-      location: row.location || '',
-      country: row.country || '',
-      timeZone: row.timeZone || '',
-      isActive: row.isActive ?? true,
-    });
-    setDialogOpen(true);
+  const handleView = async (row) => {
+    openDialog('view', row, mapRowToForm(row));
+    const fresh = await hydrateRow(row);
+    setSelectedRow(fresh);
+    setForm(mapRowToForm(fresh));
+  };
+
+  const handleEdit = async (row) => {
+    openDialog('edit', row, mapRowToForm(row));
+    const fresh = await hydrateRow(row);
+    setSelectedRow(fresh);
+    setForm(mapRowToForm(fresh));
   };
 
   const handleDelete = (row) => {
     setSelectedRow(row);
+    setError('');
     setDeleteOpen(true);
   };
 
-  const handleSubmit = () => {
-    if (!form.code?.trim() || !form.name?.trim()) {
+  const handleSubmit = async () => {
+    const validationError = validateForm(form);
+
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
-    setSaving(true);
+    try {
+      setSaving(true);
+      setError('');
 
-    setTimeout(() => {
+      const payload = buildPayload(form);
+
       if (mode === 'add') {
-        setRows((previous) => [
-          ...previous,
-          {
-            _id: String(Date.now()),
-            ...form,
-            code: form.code.trim().toUpperCase(),
-            name: form.name.trim(),
-          },
-        ]);
-      } else if (mode === 'edit' && selectedRow) {
-        setRows((previous) =>
-          previous.map((row) =>
-            row._id === selectedRow._id
-              ? {
-                  ...row,
-                  ...form,
-                  code: form.code.trim().toUpperCase(),
-                  name: form.name.trim(),
-                }
-              : row,
-          ),
-        );
+        await createWarehouse(payload);
+      } else if (selectedRow) {
+        const patch = getChangedFields(buildPayload(selectedRow), payload);
+
+        if (Object.keys(patch).length) {
+          await updateWarehouse(selectedRow._id, patch);
+        }
       }
 
       setDialogOpen(false);
-      setLastUpdated(new Date());
+      await loadWarehouses();
+    } catch (saveError) {
+      setError(getErrorMessage(saveError, 'Failed to save warehouse.'));
+    } finally {
       setSaving(false);
-    }, 200);
+    }
   };
 
-  const handleConfirmDelete = () => {
-    setSaving(true);
+  const handleConfirmDelete = async () => {
+    if (!selectedRow) return;
 
-    setTimeout(() => {
-      setRows((previous) =>
-        previous.filter((row) => row._id !== selectedRow?._id),
-      );
+    try {
+      setSaving(true);
+      setError('');
+
+      await deleteWarehouse(selectedRow._id);
+
       setDeleteOpen(false);
-      setLastUpdated(new Date());
+      setSelectedRow(null);
+      await loadWarehouses();
+    } catch (deleteError) {
+      setDeleteOpen(false);
+      setError(getErrorMessage(deleteError, 'Failed to deactivate warehouse.'));
+    } finally {
       setSaving(false);
-    }, 200);
+    }
   };
 
   const columns = [
@@ -178,9 +253,7 @@ export default function WarehouseMasterPage() {
       field: 'isActive',
       headerName: 'Status',
       width: 120,
-      renderCell: (params) => (
-        <StatusChip active={params.value} />
-      ),
+      renderCell: (params) => <StatusChip active={params.value} />,
     },
     {
       field: 'actions',
@@ -206,7 +279,7 @@ export default function WarehouseMasterPage() {
         subtitle="Manage warehouse locations and details"
         lastUpdated={lastUpdated}
         isRefreshing={loading}
-        onRefresh={handleRefresh}
+        onRefresh={loadWarehouses}
       />
 
       <div className="page-body">
@@ -232,11 +305,13 @@ export default function WarehouseMasterPage() {
           </Button>
         </div>
 
-        <AppDataGrid
-          rows={rows}
-          columns={columns}
-          loading={loading}
-        />
+        {error && !dialogOpen && !deleteOpen ? (
+          <Typography variant="body2" sx={{ color: '#c62828', mb: 1 }}>
+            {error}
+          </Typography>
+        ) : null}
+
+        <AppDataGrid rows={rows} columns={columns} loading={loading} />
       </div>
 
       <AppDialog
@@ -258,7 +333,14 @@ export default function WarehouseMasterPage() {
           form={form}
           setForm={setForm}
           readOnly={mode === 'view'}
+          disableCode={mode !== 'add'}
         />
+
+        {error ? (
+          <Typography variant="body2" sx={{ color: '#c62828', mt: 2 }}>
+            {error}
+          </Typography>
+        ) : null}
       </AppDialog>
 
       <ConfirmDialog
@@ -266,7 +348,7 @@ export default function WarehouseMasterPage() {
         onClose={() => setDeleteOpen(false)}
         onConfirm={handleConfirmDelete}
         loading={saving}
-        message={`Are you sure you want to delete "${selectedRow?.name}"?`}
+        message={`Are you sure you want to deactivate "${selectedRow?.name}"?`}
       />
     </div>
   );
