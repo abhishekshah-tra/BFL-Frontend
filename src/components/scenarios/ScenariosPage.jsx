@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/router'
 import {
   AlertTriangle,
@@ -12,6 +12,12 @@ import { Header } from '../layout/Header'
 import { useLayout } from '../layout/LayoutContext'
 import { Card } from '../common/StatusBadge'
 import { getScenarioBoard } from '../../lib/scenarioBoard'
+import {
+  getLocalSimulationDashboard,
+  getSimulationDashboard,
+  matchSimulationWarehouse,
+} from '../../services/simulation.service'
+import { getErrorMessage } from '../../utils/api'
 import { TrendChart } from './TrendChart'
 import { LiveFeedBar, TypewriterValue } from '../common/TypewriterValue'
 
@@ -96,14 +102,30 @@ function RecommendedCard({ recommended, onApply, streamKey }) {
   )
 }
 
-export function ScenariosPage() {
+export function ScenariosPage({
+  initialDashboard,
+  initialWarehouse = '',
+  fetchedAt,
+  initialError = '',
+}) {
   const { onMenuClick } = useLayout()
   const router = useRouter()
-  const board = useMemo(() => getScenarioBoard(), [])
+  const [dashboard, setDashboard] = useState(
+    () => initialDashboard || getLocalSimulationDashboard(),
+  )
+  const [warehouse, setWarehouse] = useState(() =>
+    matchSimulationWarehouse(initialDashboard || getLocalSimulationDashboard(), initialWarehouse),
+  )
+  const model = dashboard?.models?.[warehouse] || Object.values(dashboard?.models || {})[0]
+  const board = useMemo(() => getScenarioBoard(model), [model])
   const [view, setView] = useState('compare')
   const [selectedId, setSelectedId] = useState(board.recommended.id)
-  const [lastUpdated, setLastUpdated] = useState(() => new Date())
+  const [lastUpdated, setLastUpdated] = useState(() => (fetchedAt ? new Date(fetchedAt) : new Date()))
   const [isRefreshing, setIsRefreshing] = useState(false)
+
+  useEffect(() => {
+    setSelectedId(board.recommended.id)
+  }, [warehouse, board.recommended.id])
 
   const selected = board.columns.find((item) => item.id === selectedId) ?? board.recommended
   const trendLabels = board.trends.map((day) => day.label)
@@ -115,16 +137,22 @@ export function ScenariosPage() {
     ...board.alerts.map((alert) => `${alert.title} · ${alert.detail}`),
   ]), [board])
 
-  const refresh = () => {
+  const refresh = async () => {
     setIsRefreshing(true)
-    window.setTimeout(() => {
+    try {
+      const next = await getSimulationDashboard({ date: dashboard?.date })
+      setDashboard(next)
+      setWarehouse(matchSimulationWarehouse(next, warehouse))
       setLastUpdated(new Date())
+    } catch (error) {
+      console.warn(getErrorMessage(error, 'Failed to refresh scenarios.'))
+    } finally {
       setIsRefreshing(false)
-    }, 280)
+    }
   }
 
   const applyScenario = (id) => {
-    router.push(`/simulation?template=${id}`)
+    router.push(`/simulation?template=${id}&warehouse=${warehouse}`)
   }
 
   return (
@@ -135,10 +163,38 @@ export function ScenariosPage() {
         onRefresh={refresh}
         onMenuClick={onMenuClick}
         title="Scenarios"
-        subtitle="Compare TECHNO what-if plans, rank them on a weighted score, then watch seven-day KPI pressure and alerts."
+        subtitle={`Compare four ${board.warehouseName} plans built from today’s real staffing, then see which one scores best.`}
       />
 
       <div className="page-body">
+        <div className="sim-banner">
+          <span className="sim-poc">{model?.live ? 'Live plan' : 'Sample plan'}</span>
+          <span>
+            {board.guide?.scenarios}
+            {initialError ? ` ${initialError}` : ''}
+          </span>
+          <label className="sim-warehouse">
+            Warehouse
+            <select
+              className="filter-select"
+              aria-label="Scenario warehouse"
+              value={warehouse}
+              onChange={(event) => {
+                const code = event.target.value
+                setWarehouse(code)
+                router.replace(
+                  { pathname: '/scenarios', query: { warehouse: code } },
+                  undefined,
+                  { shallow: true },
+                )
+              }}
+            >
+              {(dashboard.warehouses || []).map((item) => (
+                <option key={item.code} value={item.code}>{item.code}</option>
+              ))}
+            </select>
+          </label>
+        </div>
         <LiveFeedBar strings={liveFeed} streamKey={streamKey} />
         <div className="sc-shell">
         <nav className="sc-rail" aria-label="Scenario views">
@@ -251,7 +307,7 @@ export function ScenariosPage() {
                     </dd>
                   </div>
                   <div className="kv-row">
-                    <dt>Sorting constraint</dt>
+                    <dt>{board.focusName} constraint</dt>
                     <dd>
                       <TypewriterValue text={selected.summary.bottleneckLabel} speed={20} delayMs={260} streamKey={streamKey} />
                     </dd>
@@ -320,7 +376,7 @@ export function ScenariosPage() {
                 <Card className="sc-card" title="Parameter Watch (Selected)">
                   <dl className="kv-list">
                     <div className="kv-row">
-                      <dt>Robots (Sorting)</dt>
+                      <dt>Robots ({board.focusName})</dt>
                       <dd>
                         <TypewriterValue text={board.watch.robots} speed={28} delayMs={120} streamKey={streamKey} />
                       </dd>
@@ -342,7 +398,7 @@ export function ScenariosPage() {
 
           <p className="sc-footnote">
             <LayoutList size={14} /> <SlidersHorizontal size={14} />
-            Figures come from the same 30-minute TECHNO calculator used in Simulation. Score = 35% SLA + 30% throughput + 20% queue/wait + 15% utilisation near 85%.
+            Same calculator as Simulation, using the real roster at {board.warehouseName}. Score = 35% on-time service + 30% work completed + 20% queue and wait + 15% staying near a healthy 85% busy. The seven-day lines wobble around today’s baseline; they are not a saved history.
           </p>
         </div>
         </div>

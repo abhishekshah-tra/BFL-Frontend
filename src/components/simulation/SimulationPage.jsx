@@ -14,55 +14,59 @@ import {
 import { Header } from '../layout/Header'
 import { useLayout } from '../layout/LayoutContext'
 import { Card } from '../common/StatusBadge'
-import {
-  BASELINE_PARAMS,
-  RESOURCE_LIMITS,
-  SCENARIO_TEMPLATES,
-  SIM_DATE,
-  bucketLabel,
-  formatItems,
-} from '../../data/simulationConfig'
+import { bucketLabel, formatItems } from '../../data/simulationConfig'
 import { compareTemplates, runSimulation, sanitizeParams } from '../../lib/simulationEngine'
+import {
+  getLocalSimulationDashboard,
+  getSimulationDashboard,
+  matchSimulationWarehouse,
+} from '../../services/simulation.service'
+import { getErrorMessage } from '../../utils/api'
 import { LiveFeedBar, TypewriterValue } from '../common/TypewriterValue'
 
 const SPEEDS = [0.5, 1, 2, 4]
-const PARAM_FIELDS = [
-  {
-    key: 'volumePct',
-    label: 'Volume (Incoming)',
-    unit: '% vs baseline',
-    impact: 'All processes',
-    hint: 'Scales JAFZA → TECHNO receiving arrivals.',
-  },
-  {
-    key: 'operators',
-    label: 'Operators (Sorting)',
-    unit: 'Nos',
-    impact: 'Sorting',
-    hint: `Max ${RESOURCE_LIMITS.operators.max}. Baseline ${BASELINE_PARAMS.operators}.`,
-  },
-  {
-    key: 'robots',
-    label: 'Robots (Sorting)',
-    unit: 'Nos',
-    impact: 'Sorting',
-    hint: `Cannot exceed ${RESOURCE_LIMITS.robots.configured} robots on site.`,
-  },
-  {
-    key: 'chutes',
-    label: 'Active Chutes',
-    unit: 'Nos',
-    impact: 'Sorting',
-    hint: `Configured lanes: ${RESOURCE_LIMITS.chutes.configured}.`,
-  },
-  {
-    key: 'productivityPct',
-    label: 'Processing Productivity',
-    unit: '% vs baseline',
-    impact: 'Sorting pipe',
-    hint: 'Multiplies every station and resource rate.',
-  },
-]
+function paramFields(model) {
+  const limits = model.resourceLimits
+  const baseline = model.baselineParams
+  const focus = model.processes.find((process) => process.id === model.focusProcessId)?.name || 'the main station'
+  return [
+    {
+      key: 'volumePct',
+      label: 'Volume (Incoming)',
+      unit: '% vs today',
+      impact: 'Whole floor',
+      hint: `Scales how many parcels arrive at ${model.warehouse.name}. 0% means today’s real volume.`,
+    },
+    {
+      key: 'operators',
+      label: `Operators (${focus})`,
+      unit: 'people',
+      impact: focus,
+      hint: `Today ${baseline.operators}. Slider max ${limits.operators.max}.`,
+    },
+    {
+      key: 'robots',
+      label: `Robots (${focus})`,
+      unit: 'machines',
+      impact: focus,
+      hint: `Today ${baseline.robots}. The site has ${limits.robots.configured} planned.`,
+    },
+    {
+      key: 'chutes',
+      label: 'Active Chutes',
+      unit: 'lanes',
+      impact: focus,
+      hint: `Today ${baseline.chutes}. Planned lanes: ${limits.chutes.configured}.`,
+    },
+    {
+      key: 'productivityPct',
+      label: 'Speed-up',
+      unit: '% vs today',
+      impact: 'Every station',
+      hint: 'A plus makes every station a bit faster. Zero means today’s real rate.',
+    },
+  ]
+}
 
 function statusLabel(status) {
   if (status === 'red') return 'Jammed'
@@ -104,34 +108,55 @@ function QueueSpark({ buckets, processId, cursor }) {
   )
 }
 
-export function SimulationPage() {
+function starterModel(dashboard, warehouse) {
+  return dashboard?.models?.[warehouse] || Object.values(dashboard?.models || {})[0]
+}
+
+export function SimulationPage({
+  initialDashboard,
+  initialWarehouse = '',
+  initialTemplate = '',
+  fetchedAt,
+  initialError = '',
+}) {
   const { onMenuClick } = useLayout()
   const router = useRouter()
-  const [templateId, setTemplateId] = useState('volume-surge')
-  const [draft, setDraft] = useState({ ...SCENARIO_TEMPLATES[1].params })
-  const [scenarioName, setScenarioName] = useState(SCENARIO_TEMPLATES[1].name)
-  const [run, setRun] = useState(() => runSimulation(SCENARIO_TEMPLATES[1].params))
+  const [dashboard, setDashboard] = useState(
+    () => initialDashboard || getLocalSimulationDashboard(),
+  )
+  const [warehouse, setWarehouse] = useState(() =>
+    matchSimulationWarehouse(initialDashboard || getLocalSimulationDashboard(), initialWarehouse),
+  )
+  const model = starterModel(dashboard, warehouse) || getLocalSimulationDashboard().models.TECHNO
+  const opening = model.templates.find((item) => item.id === (initialTemplate || 'baseline')) || model.templates[0]
+  const [templateId, setTemplateId] = useState(opening.id)
+  const [draft, setDraft] = useState({ ...opening.params })
+  const [scenarioName, setScenarioName] = useState(opening.name)
+  const [run, setRun] = useState(() => runSimulation(opening.params, model))
   const [cursor, setCursor] = useState(5)
   const [playing, setPlaying] = useState(false)
   const [speed, setSpeed] = useState(1)
-  const [selectedProcess, setSelectedProcess] = useState('sorting')
-  const [lastUpdated, setLastUpdated] = useState(() => new Date())
+  const [selectedProcess, setSelectedProcess] = useState(model.focusProcessId)
+  const [lastUpdated, setLastUpdated] = useState(() => (fetchedAt ? new Date(fetchedAt) : new Date()))
   const [isRefreshing, setIsRefreshing] = useState(false)
 
-  const comparison = useMemo(() => compareTemplates(), [])
-  const params = sanitizeParams(draft)
+  const comparison = useMemo(() => compareTemplates(model), [model])
+  const params = sanitizeParams(draft, model)
+  const fields = paramFields(model)
   const bucket = run.buckets[cursor]
-  const selectedRow = bucket.rows.find((row) => row.processId === selectedProcess) ?? bucket.rows[4]
+  const focusRow = bucket.rows.find((row) => row.processId === model.focusProcessId) ?? bucket.rows[0]
+  const outboundRow = bucket.rows.find((row) => row.processId === model.outboundProcessId) ?? bucket.rows[bucket.rows.length - 1]
+  const selectedRow = bucket.rows.find((row) => row.processId === selectedProcess) ?? focusRow
   const bottleneck = bucket.rows.reduce((worst, row) => (
     row.closingQueue > worst.closingQueue ? row : worst
   ), bucket.rows[0])
   const streamKey = lastUpdated.getTime()
   const liveFeed = useMemo(() => ([
-    `${scenarioName} · ${SIM_DATE.label} · ${run.summary.bottleneckStatus === 'green' ? 'flow clear' : `jam at ${run.summary.bottleneckLabel}`}`,
+    `${scenarioName} · ${model.date.label} · ${model.warehouse.name} · ${run.summary.bottleneckStatus === 'green' ? 'flow clear' : `jam at ${run.summary.bottleneckLabel}`}`,
     `Day throughput ${formatItems(run.summary.throughput)} · peak sort queue ${formatItems(run.summary.peakQueue)}`,
     `Avg wait ${formatWait(run.summary.avgWait)} · SLA ${formatPct(run.summary.avgSla)} · util ${formatPct(run.summary.avgUtil)}`,
     `Score ${run.summary.score.toFixed(1)} · inbound ${formatItems(run.summary.inbound)}`,
-  ]), [scenarioName, run.summary])
+  ]), [scenarioName, run.summary, model.date.label, model.warehouse.name])
 
   useEffect(() => {
     if (!playing) return undefined
@@ -148,16 +173,16 @@ export function SimulationPage() {
   }, [playing, speed, run.buckets.length])
 
   useEffect(() => {
-    const next = sanitizeParams(draft)
+    const next = sanitizeParams(draft, model)
     if (!next.valid) return undefined
     const timer = window.setTimeout(() => {
-      setRun(runSimulation(next))
+      setRun(runSimulation(next, model))
     }, 80)
     return () => window.clearTimeout(timer)
-  }, [draft])
+  }, [draft, model])
 
-  const applyRun = (nextParams, name, nextTemplateId) => {
-    const computed = runSimulation(nextParams)
+  const applyRun = (nextParams, name, nextTemplateId, nextModel = model) => {
+    const computed = runSimulation(nextParams, nextModel)
     setRun(computed)
     setDraft({ ...computed.params })
     if (name) setScenarioName(name)
@@ -166,31 +191,65 @@ export function SimulationPage() {
     setPlaying(false)
   }
 
-  const applyTemplate = (template) => {
-    applyRun(template.params, template.name, template.id)
+  const applyTemplate = (template, nextModel = model) => {
+    applyRun(template.params, template.name, template.id, nextModel)
+    setSelectedProcess(nextModel.focusProcessId)
   }
 
   useEffect(() => {
     if (!router.isReady) return undefined
     const id = router.query.template
-    if (typeof id !== 'string') return undefined
-    const template = SCENARIO_TEMPLATES.find((item) => item.id === id)
-    if (!template) return undefined
-    applyTemplate(template)
+    const wh = router.query.warehouse
+    if (typeof wh === 'string' && wh && wh !== warehouse) {
+      const code = matchSimulationWarehouse(dashboard, wh)
+      const nextModel = starterModel(dashboard, code)
+      if (nextModel) {
+        setWarehouse(code)
+        const template = nextModel.templates.find((item) => item.id === id) || nextModel.templates[0]
+        applyTemplate(template, nextModel)
+      }
+    } else if (typeof id === 'string') {
+      const template = model.templates.find((item) => item.id === id)
+      if (template && template.id !== templateId) applyTemplate(template)
+    }
     return undefined
-  }, [router.isReady, router.query.template])
+  }, [router.isReady, router.query.template, router.query.warehouse])
 
   const updateField = (key, value) => {
     setTemplateId('custom')
     setDraft((current) => ({ ...current, [key]: Number(value) }))
   }
 
-  const refresh = () => {
+  const refresh = async () => {
     setIsRefreshing(true)
-    window.setTimeout(() => {
-      applyRun(draft, scenarioName, templateId)
+    try {
+      const next = await getSimulationDashboard({ date: dashboard?.date })
+      setDashboard(next)
+      const code = matchSimulationWarehouse(next, warehouse)
+      setWarehouse(code)
+      const nextModel = starterModel(next, code)
+      const template = nextModel.templates.find((item) => item.id === templateId) || nextModel.templates[0]
+      applyTemplate(template, nextModel)
+      setLastUpdated(new Date())
+    } catch (error) {
+      setLastUpdated(new Date())
+      console.warn(getErrorMessage(error))
+    } finally {
       setIsRefreshing(false)
-    }, 280)
+    }
+  }
+
+  const changeWarehouse = (code) => {
+    const nextModel = starterModel(dashboard, code)
+    if (!nextModel) return
+    setWarehouse(code)
+    const template = nextModel.templates.find((item) => item.id === 'baseline') || nextModel.templates[0]
+    applyTemplate(template, nextModel)
+    router.replace(
+      { pathname: '/simulation', query: { warehouse: code, template: template.id } },
+      undefined,
+      { shallow: true },
+    )
   }
 
   return (
@@ -201,19 +260,35 @@ export function SimulationPage() {
         onRefresh={refresh}
         onMenuClick={onMenuClick}
         title="Simulation"
-        subtitle="Deterministic 30-minute calculator from JAFZA handoff through TECHNO’s seven stations. Same inputs always replay the same run."
+        subtitle={`Replay one ${model.warehouse.name} day in 30-minute steps, using today’s real staffing. Same inputs always give the same result.`}
       />
 
       <div className="page-body">
         <div className="sim-banner">
-          <span className="sim-poc">Representative POC Data</span>
-          <span>Handoff rule: TECHNO Receiving arrivals = JAFZA outbound this bucket. Downstream arrivals = upstream processed this bucket. Leftover queue carries to the next 30 minutes.</span>
+          <span className="sim-poc">{model.live ? 'Live plan' : 'Sample plan'}</span>
+          <span>
+            {model.guide.simulation}
+            {initialError ? ` ${initialError}` : ''}
+          </span>
+          <label className="sim-warehouse">
+            Warehouse
+            <select
+              className="filter-select"
+              aria-label="Simulation warehouse"
+              value={warehouse}
+              onChange={(event) => changeWarehouse(event.target.value)}
+            >
+              {(dashboard.warehouses || []).map((item) => (
+                <option key={item.code} value={item.code}>{item.code}</option>
+              ))}
+            </select>
+          </label>
         </div>
 
         <LiveFeedBar strings={liveFeed} streamKey={streamKey} />
 
         <div className="sim-presets" role="list">
-          {SCENARIO_TEMPLATES.map((template) => {
+          {model.templates.map((template) => {
             const compared = comparison.find((item) => item.id === template.id)
             const active = templateId === template.id
             return (
@@ -247,16 +322,16 @@ export function SimulationPage() {
               <button
                 type="button"
                 className="text-link"
-                onClick={() => applyTemplate(SCENARIO_TEMPLATES[0])}
+                onClick={() => applyTemplate(model.templates[0])}
               >
                 <RotateCcw size={14} /> Reset
               </button>
             </div>
 
             <div className="sim-knobs">
-              {PARAM_FIELDS.map((field) => {
-                const limits = RESOURCE_LIMITS[field.key]
-                const current = BASELINE_PARAMS[field.key]
+              {fields.map((field) => {
+                const limits = model.resourceLimits[field.key]
+                const current = model.baselineParams[field.key]
                 const next = draft[field.key]
                 const displayCurrent = field.key.includes('Pct') ? `${current}%` : current
                 const rangeMax = limits.max
@@ -310,7 +385,7 @@ export function SimulationPage() {
             <Card className="sim-player">
               <div className="sim-player__bar">
                 <div>
-                  <p className="sim-player__kicker">Playback · {SIM_DATE.label}</p>
+                  <p className="sim-player__kicker">Playback · {model.warehouse.name} · {model.date.label}</p>
                   <h3>Simulation time {bucket.timeLabel}</h3>
                 </div>
                 <label className="wn-field">
@@ -411,25 +486,25 @@ export function SimulationPage() {
               <div className="metric">
                 <div className="metric__label">Dispatched this bucket</div>
                 <div className="metric__value">
-                  <TypewriterValue text={formatItems(bucket.rows[6].processed)} speed={18} delayMs={40} streamKey={streamKey} instant={playing} />
+                  <TypewriterValue text={formatItems(outboundRow.processed)} speed={18} delayMs={40} streamKey={streamKey} instant={playing} />
                 </div>
               </div>
               <div className="metric">
-                <div className="metric__label">Sorting queue</div>
-                <div className={`metric__value ${bottleneck.processId === 'sorting' ? 'is-danger' : ''}`}>
-                  <TypewriterValue text={formatItems(bucket.rows[4].closingQueue)} speed={18} delayMs={80} streamKey={streamKey} instant={playing} />
+                <div className="metric__label">{focusRow.processName} queue</div>
+                <div className={`metric__value ${bottleneck.processId === model.focusProcessId ? 'is-danger' : ''}`}>
+                  <TypewriterValue text={formatItems(focusRow.closingQueue)} speed={18} delayMs={80} streamKey={streamKey} instant={playing} />
                 </div>
               </div>
               <div className="metric">
-                <div className="metric__label">Sorting wait</div>
+                <div className="metric__label">{focusRow.processName} wait</div>
                 <div className="metric__value">
-                  <TypewriterValue text={formatWait(bucket.rows[4].avgWaitMin)} speed={20} delayMs={120} streamKey={streamKey} instant={playing} />
+                  <TypewriterValue text={formatWait(focusRow.avgWaitMin)} speed={20} delayMs={120} streamKey={streamKey} instant={playing} />
                 </div>
               </div>
               <div className="metric">
-                <div className="metric__label">Sorting SLA</div>
-                <div className={`metric__value ${bucket.rows[4].slaPct < 80 ? 'is-danger' : ''}`}>
-                  <TypewriterValue text={formatPct(bucket.rows[4].slaPct)} speed={22} delayMs={160} streamKey={streamKey} instant={playing} />
+                <div className="metric__label">{focusRow.processName} SLA</div>
+                <div className={`metric__value ${focusRow.slaPct < 80 ? 'is-danger' : ''}`}>
+                  <TypewriterValue text={formatPct(focusRow.slaPct)} speed={22} delayMs={160} streamKey={streamKey} instant={playing} />
                 </div>
               </div>
               <div className="metric">
@@ -447,7 +522,7 @@ export function SimulationPage() {
             >
               <div className="sim-table-meta">
                 <span>Jam this slice: <strong>{bottleneck.processName}</strong> ({statusLabel(bottleneck.status)})</span>
-                <span>Sorting queue over the day <QueueSpark buckets={run.buckets} processId="sorting" cursor={cursor} /></span>
+                <span>{focusRow.processName} queue over the day <QueueSpark buckets={run.buckets} processId={model.focusProcessId} cursor={cursor} /></span>
               </div>
               <div className="table-wrap">
                 <table className="data-table sim-table">
@@ -566,7 +641,7 @@ export function SimulationPage() {
 
           <Card className="sim-compare" title="Four-plan scorecard">
             <p className="muted">
-              Score = 35% SLA + 30% throughput + 20% queue/wait + 15% resource efficiency.{' '}
+              The score is a simple mix: 35% on-time service, 30% work completed, 20% queue and wait, 15% not running too hot or too idle.{' '}
               <button type="button" className="text-link" onClick={() => router.push('/scenarios')}>
                 Open full scenario comparison
               </button>
@@ -623,7 +698,7 @@ export function SimulationPage() {
         </div>
 
         <p className="sim-footnote">
-          <Gauge size={14} /> <SlidersHorizontal size={14} /> Values are simulated from scenario inputs and 30-minute bucket progression. They are representative POC figures, not live BFL production extracts.
+          <Gauge size={14} /> <SlidersHorizontal size={14} /> The day is split into 30-minute slices. Anything still in queue carries into the next slice. {model.live ? 'Staffing and capacity come from today’s warehouse configuration.' : 'Showing the sample plan because live configuration was unavailable.'}
         </p>
       </div>
     </div>

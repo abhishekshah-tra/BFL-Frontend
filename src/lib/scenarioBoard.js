@@ -1,4 +1,4 @@
-import { BASELINE_PARAMS, TREND_DAYS } from '../data/simulationConfig'
+import { LOCAL_SIMULATION_MODEL } from '../data/simulationConfig'
 import { compareTemplates, runSimulation } from './simulationEngine'
 
 const WEIGHTS = [
@@ -24,8 +24,8 @@ function formatSignedPct(value, digits = 1) {
   return `${sign}${rounded.toFixed(digits)}%`
 }
 
-function actionCopy(item, baseline) {
-  if (item.id === 'baseline') return 'Hold the current TECHNO sorting roster.'
+function actionCopy(item, baseline, warehouseName, focusName) {
+  if (item.id === 'baseline') return `Hold the current ${warehouseName} ${focusName} roster.`
   const sameRoster =
     item.params.robots === baseline.params.robots &&
     item.params.operators === baseline.params.operators &&
@@ -36,7 +36,7 @@ function actionCopy(item, baseline) {
   }
   const bits = []
   if (item.params.robots !== baseline.params.robots) bits.push(`robots to ${item.params.robots}`)
-  if (item.params.operators !== baseline.params.operators) bits.push(`operators to ${item.params.operators} in sorting`)
+  if (item.params.operators !== baseline.params.operators) bits.push(`operators to ${item.params.operators} in ${focusName}`)
   if (item.params.chutes !== baseline.params.chutes) bits.push(`chutes to ${item.params.chutes}`)
   let text = bits.length ? `Increase ${bits.join(' and ')}` : 'Hold current resources'
   if (item.params.productivityPct !== baseline.params.productivityPct) {
@@ -88,16 +88,16 @@ function rankInsight(item, baseline) {
   }
 }
 
-function firstBreach(buckets, test) {
+function firstBreach(buckets, focusProcessId, test) {
   const hit = buckets.find((bucket) => {
-    const sorting = bucket.rows.find((row) => row.processId === 'sorting')
+    const sorting = bucket.rows.find((row) => row.processId === focusProcessId)
     return sorting && test(sorting)
   })
   return hit?.timeLabel ?? buckets[Math.floor(buckets.length / 3)]?.timeLabel ?? '10:00 AM'
 }
 
-function buildAlerts(baselineRun) {
-  const sorting = baselineRun.buckets.map((bucket) => bucket.rows.find((row) => row.processId === 'sorting'))
+function buildAlerts(baselineRun, focusProcessId, focusName) {
+  const sorting = baselineRun.buckets.map((bucket) => bucket.rows.find((row) => row.processId === focusProcessId))
   const last = sorting[sorting.length - 1]
   const peak = Math.max(...sorting.map((row) => row.closingQueue))
   const alerts = []
@@ -106,31 +106,31 @@ function buildAlerts(baselineRun) {
     alerts.push({
       id: 'util',
       title: 'High Utilization',
-      detail: 'Robo / Manual Sorting',
-      time: firstBreach(baselineRun.buckets, (row) => row.utilizationPct >= 85),
+      detail: focusName,
+      time: firstBreach(baselineRun.buckets, focusProcessId, (row) => row.utilizationPct >= 85),
     })
   }
   if (peak >= 400) {
     alerts.push({
       id: 'queue',
       title: 'Queue Threshold Exceeded',
-      detail: 'Robo / Manual Sorting',
-      time: firstBreach(baselineRun.buckets, (row) => row.closingQueue >= 400),
+      detail: focusName,
+      time: firstBreach(baselineRun.buckets, focusProcessId, (row) => row.closingQueue >= 400),
     })
   }
   if (last.slaPct < 86 || baselineRun.summary.avgSla < 86) {
     alerts.push({
       id: 'sla',
       title: 'SLA At Risk',
-      detail: `Sorting SLA < 86%`,
-      time: firstBreach(baselineRun.buckets, (row) => row.slaPct < 86),
+      detail: `${focusName} SLA under 86%`,
+      time: firstBreach(baselineRun.buckets, focusProcessId, (row) => row.slaPct < 86),
     })
   }
   if (!alerts.length) {
     alerts.push({
       id: 'ok',
       title: 'No critical alerts',
-      detail: 'Sorting is inside the healthy band for this run.',
+      detail: `${focusName} is inside the healthy band for this run.`,
       time: last.timeLabel,
       tone: 'ok',
     })
@@ -138,13 +138,13 @@ function buildAlerts(baselineRun) {
   return alerts
 }
 
-function buildTrendSeries(params) {
-  return TREND_DAYS.map((day) => {
+function buildTrendSeries(params, model) {
+  return (model.trendDays || []).map((day) => {
     const run = runSimulation({
       ...params,
       volumePct: (params.volumePct || 0) + day.volumePct,
       productivityPct: (params.productivityPct || 0) + day.productivityPct,
-    })
+    }, model)
     return {
       ...day,
       throughput: run.summary.throughput,
@@ -155,8 +155,11 @@ function buildTrendSeries(params) {
   })
 }
 
-export function getScenarioBoard() {
-  const compared = compareTemplates()
+export function getScenarioBoard(model = LOCAL_SIMULATION_MODEL) {
+  const active = model?.processes?.length ? model : LOCAL_SIMULATION_MODEL
+  const focusName = active.processes.find((process) => process.id === active.focusProcessId)?.name || 'Sorting'
+  const warehouseName = active.warehouse?.name || 'this warehouse'
+  const compared = compareTemplates(active)
   const baseline = compared.find((item) => item.id === 'baseline')
   const baseCost = operatingCost(baseline.params)
   const baseSummary = baseline.summary
@@ -170,6 +173,7 @@ export function getScenarioBoard() {
       costDelta,
       costLabel: formatSignedPct(costDelta, 0),
       ...insight,
+      action: actionCopy(item, baseline, warehouseName, focusName),
       deltas: {
         throughput: pctDelta(item.summary.throughput, baseSummary.throughput),
         peakQueue: pctDelta(item.summary.peakQueue, baseSummary.peakQueue),
@@ -284,7 +288,7 @@ export function getScenarioBoard() {
     }
   })
 
-  const trends = buildTrendSeries(BASELINE_PARAMS)
+  const trends = buildTrendSeries(active.baselineParams, active)
   const lastTrend = trends[trends.length - 1]
 
   return {
@@ -294,12 +298,17 @@ export function getScenarioBoard() {
     ranked,
     recommended: {
       ...recommended,
-      action: actionCopy(recommended, baseline),
+      action: recommended.action,
       impactRows: recommendedDeltas,
     },
-    alerts: buildAlerts(baseline.run),
+    alerts: buildAlerts(baseline.run, active.focusProcessId, focusName),
+    focusName,
+    warehouseName,
+    guide: active.guide,
     watch: {
       robots: baseline.params.robots,
+      operators: baseline.params.operators,
+      chutes: baseline.params.chutes,
       utilization: Math.round(lastTrend.utilization),
     },
     trends,

@@ -5,6 +5,7 @@
 .sim-banner {
   display: flex;
   align-items: flex-start;
+  flex-wrap: wrap;
   gap: 12px;
   padding: 10px 14px;
   background: #fff8eb;
@@ -13,6 +14,16 @@
   color: var(--text-secondary);
   font-size: 12.5px;
   line-height: 1.45;
+}
+
+.sim-warehouse {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 650;
 }
 
 .sim-poc {

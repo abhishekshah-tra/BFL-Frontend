@@ -208,8 +208,8 @@ export const PROCESSES = [
   },
 ]
 
-export function bucketLabel(index) {
-  const total = DAY_START_MINUTES + index * BUCKET_MINUTES
+export function bucketLabel(index, model) {
+  const total = (model?.dayStartMinutes ?? DAY_START_MINUTES) + index * (model?.bucketMinutes ?? BUCKET_MINUTES)
   const hours = Math.floor(total / 60)
   const minutes = total % 60
   const suffix = hours >= 12 ? 'PM' : 'AM'
@@ -219,4 +219,28 @@ export function bucketLabel(index) {
 
 export function formatItems(value) {
   return Math.round(value).toLocaleString('en-US')
+}
+
+export const LOCAL_SIMULATION_MODEL = {
+  live: false,
+  warehouse: { code: 'TECHNO', name: 'TECHNO' },
+  date: SIM_DATE,
+  bucketMinutes: BUCKET_MINUTES,
+  bucketCount: BUCKET_COUNT,
+  dayStartMinutes: DAY_START_MINUTES,
+  focusProcessId: 'sorting',
+  inboundProcessId: 'receiving',
+  outboundProcessId: 'dispatch',
+  resourceLimits: RESOURCE_LIMITS,
+  baselineParams: BASELINE_PARAMS,
+  templates: SCENARIO_TEMPLATES,
+  trendDays: TREND_DAYS,
+  arrivals: BASE_ARRIVALS,
+  processes: PROCESSES,
+  guide: {
+    simulation:
+      'This replay walks one TECHNO day in 30-minute steps, from receiving to dispatch. The sliders ask “what if we change volume or the sorting roster?” Press play to watch the queue. These starting numbers are the sample plan, used when the live warehouse API is unavailable.',
+    scenarios:
+      'Four plans for TECHNO. Baseline is the current roster. Volume +30% keeps the same people and machines but makes the morning busier. The resource plan fills missing robots and operators. Hybrid adds chutes and a small speed-up. The highest score is the plan that protects service and still gets the work out.',
+  },
 }

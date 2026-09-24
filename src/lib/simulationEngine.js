@@ -1,51 +1,52 @@
 import {
-  BASE_ARRIVALS,
-  BASELINE_PARAMS,
-  BUCKET_COUNT,
   BUCKET_HOURS,
   BUCKET_MINUTES,
   EPSILON,
-  PROCESSES,
-  RESOURCE_LIMITS,
-  SCENARIO_TEMPLATES,
+  LOCAL_SIMULATION_MODEL,
   SLA_NEAR_RATIO,
   bucketLabel,
 } from '../data/simulationConfig.js'
+
+function useModel(model) {
+  return model?.processes?.length ? model : LOCAL_SIMULATION_MODEL
+}
 
 export function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value))
 }
 
-export function sanitizeParams(raw) {
+export function sanitizeParams(raw, model) {
+  const limits = useModel(model).resourceLimits
+  const warehouseName = useModel(model).warehouse?.name || 'this warehouse'
   const volumePct = clamp(
     Number(raw.volumePct) || 0,
-    RESOURCE_LIMITS.volumePct.min,
-    RESOURCE_LIMITS.volumePct.max,
+    limits.volumePct.min,
+    limits.volumePct.max,
   )
   const operators = clamp(
     Math.round(Number(raw.operators)),
-    RESOURCE_LIMITS.operators.min,
-    RESOURCE_LIMITS.operators.max,
+    limits.operators.min,
+    limits.operators.max,
   )
   const robots = clamp(
     Math.round(Number(raw.robots)),
-    RESOURCE_LIMITS.robots.min,
-    RESOURCE_LIMITS.robots.max,
+    limits.robots.min,
+    limits.robots.max,
   )
   const chutes = clamp(
     Math.round(Number(raw.chutes)),
-    RESOURCE_LIMITS.chutes.min,
-    RESOURCE_LIMITS.chutes.max,
+    limits.chutes.min,
+    limits.chutes.max,
   )
   const productivityPct = clamp(
     Number(raw.productivityPct) || 0,
-    RESOURCE_LIMITS.productivityPct.min,
-    RESOURCE_LIMITS.productivityPct.max,
+    limits.productivityPct.min,
+    limits.productivityPct.max,
   )
 
   const errors = []
-  if (robots > RESOURCE_LIMITS.robots.configured) {
-    errors.push('Cannot use more robots than exist at TECHNO (18).')
+  if (robots > limits.robots.configured) {
+    errors.push(`Cannot use more robots than exist at ${warehouseName} (${limits.robots.configured}).`)
   }
   if (operators < 0 || robots < 0 || chutes < 0) {
     errors.push('Resource counts cannot be negative.')
@@ -67,7 +68,8 @@ function resourceCapacity(count, productivityPerHour, productivityFactor) {
   return count * productivityPerHour * BUCKET_HOURS * productivityFactor
 }
 
-export function processCapacity(process, params) {
+export function processCapacity(process, params, model) {
+  const limits = useModel(model).resourceLimits
   const productivityFactor = 1 + params.productivityPct / 100
   const operators = process.usesScenarioOperators ? params.operators : process.operators
   const robots = process.usesScenarioRobots ? params.robots : process.robots
@@ -98,13 +100,13 @@ export function processCapacity(process, params) {
   const effectiveCapacity = Math.max(EPSILON, binding.value)
   const availability = {
     operators: process.usesScenarioOperators
-      ? operators / RESOURCE_LIMITS.operators.configured
+      ? operators / Math.max(limits.operators.configured, 1)
       : 1,
     robots: process.usesScenarioRobots
-      ? robots / RESOURCE_LIMITS.robots.configured
+      ? robots / Math.max(limits.robots.configured, 1)
       : 1,
     chutes: process.usesScenarioChutes
-      ? chutes / RESOURCE_LIMITS.chutes.configured
+      ? chutes / Math.max(limits.chutes.configured, 1)
       : 1,
   }
 
@@ -147,12 +149,13 @@ function slaPct(avgWaitMin, slaMin) {
   return clamp(100 - ratio * 18, 48, 98)
 }
 
-function simulateBucket(queues, params, arrivals, timeIndex) {
+function simulateBucket(queues, params, arrivals, timeIndex, model) {
+  const active = useModel(model)
   const results = []
   let upstreamProcessed = arrivals
 
-  for (const process of PROCESSES) {
-    const cap = processCapacity(process, params)
+  for (const process of active.processes) {
+    const cap = processCapacity(process, params, active)
     const openingQueue = queues[process.id]
     const inbound = upstreamProcessed
     const availableWork = openingQueue + inbound
@@ -167,7 +170,7 @@ function simulateBucket(queues, params, arrivals, timeIndex) {
       processId: process.id,
       processName: process.name,
       timeIndex,
-      timeLabel: bucketLabel(timeIndex),
+      timeLabel: bucketLabel(timeIndex, active),
       arrivals: inbound,
       openingQueue,
       availableWork,
@@ -196,11 +199,12 @@ function simulateBucket(queues, params, arrivals, timeIndex) {
   return results
 }
 
-function summarizeRun(buckets, params) {
+function summarizeRun(buckets, params, model) {
+  const active = useModel(model)
   const last = buckets[buckets.length - 1]
-  const sorting = buckets.map((bucket) => bucket.rows.find((row) => row.processId === 'sorting'))
-  const dispatch = buckets.map((bucket) => bucket.rows.find((row) => row.processId === 'dispatch'))
-  const receiving = buckets.map((bucket) => bucket.rows.find((row) => row.processId === 'receiving'))
+  const sorting = buckets.map((bucket) => bucket.rows.find((row) => row.processId === active.focusProcessId))
+  const dispatch = buckets.map((bucket) => bucket.rows.find((row) => row.processId === active.outboundProcessId))
+  const receiving = buckets.map((bucket) => bucket.rows.find((row) => row.processId === active.inboundProcessId))
 
   const throughput = dispatch.reduce((sum, row) => sum + row.processed, 0)
   const inbound = receiving.reduce((sum, row) => sum + row.arrivals, 0)
@@ -248,18 +252,20 @@ function summarizeRun(buckets, params) {
   }
 }
 
-export function runSimulation(rawParams) {
-  const params = sanitizeParams(rawParams)
-  const queues = Object.fromEntries(PROCESSES.map((process) => [process.id, 0]))
+export function runSimulation(rawParams, model) {
+  const active = useModel(model)
+  const params = sanitizeParams(rawParams, active)
+  const queues = Object.fromEntries(active.processes.map((process) => [process.id, 0]))
   const volumeFactor = 1 + params.volumePct / 100
   const buckets = []
+  const count = Math.min(active.bucketCount || active.arrivals.length, active.arrivals.length)
 
-  for (let index = 0; index < BUCKET_COUNT; index += 1) {
-    const arrivals = BASE_ARRIVALS[index] * volumeFactor
-    const rows = simulateBucket(queues, params, arrivals, index)
+  for (let index = 0; index < count; index += 1) {
+    const arrivals = active.arrivals[index] * volumeFactor
+    const rows = simulateBucket(queues, params, arrivals, index, active)
     buckets.push({
       index,
-      timeLabel: bucketLabel(index),
+      timeLabel: bucketLabel(index, active),
       arrivals,
       rows,
     })
@@ -268,14 +274,15 @@ export function runSimulation(rawParams) {
   return {
     params,
     buckets,
-    summary: summarizeRun(buckets, params),
+    summary: summarizeRun(buckets, params, active),
     generatedAt: 'deterministic',
   }
 }
 
-export function compareTemplates() {
-  return SCENARIO_TEMPLATES.map((template) => {
-    const run = runSimulation(template.params)
+export function compareTemplates(model) {
+  const active = useModel(model)
+  return active.templates.map((template) => {
+    const run = runSimulation(template.params, active)
     return {
       ...template,
       run,
@@ -294,4 +301,4 @@ export function compareTemplates() {
   })
 }
 
-export { BASELINE_PARAMS, SCENARIO_TEMPLATES }
+export { LOCAL_SIMULATION_MODEL }

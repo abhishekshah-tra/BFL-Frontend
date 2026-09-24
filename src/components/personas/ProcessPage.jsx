@@ -1,66 +1,66 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
-import {
-  processData
-} from "@/data/personas/personasData";
 import { Header } from "@/components/layout/Header";
 import { useLayout } from "@/components/layout/LayoutContext";
 import { PersonasScope } from "./PersonasScope";
 import { usePersonasUI } from "./PersonasUI";
 import { LiveFeedBar, TypewriterValue } from "@/components/common/TypewriterValue";
-const PROC_LAST_UPDATED = /* @__PURE__ */ new Date("2025-05-20T10:30:00+04:00");
-const WAREHOUSES = ["TECHNO", "YOTO", "JAFZA"];
-const PROCESSES = [
-  { value: "Robo Sorting", label: "Robo / Manual Sorting" },
-  { value: "Receive", label: "Receive" },
-  { value: "Checking", label: "Checking" },
-  { value: "Tagging", label: "Tagging" },
-  { value: "Allocation", label: "Allocation" },
-  { value: "Staging", label: "Staging" },
-  { value: "Dispatch", label: "Dispatch" }
-];
-const RESOURCES = [
-  {
-    label: "Robots",
-    value: "16 / 18 Active",
-    pct: 89,
-    bar: "green",
-    detail: "16 of 18 robots active. 2 offline for scheduled maintenance."
-  },
-  {
-    label: "Chutes",
-    value: "30 / 36 Available",
-    pct: 83,
-    bar: "orange",
-    detail: "30 of 36 chutes available. Chutes 35-36 on standby."
-  },
-  {
-    label: "Manual Stations",
-    value: "12 / 16 Active",
-    pct: 75,
-    bar: "green",
-    detail: "12 of 16 manual stations active."
-  },
-  {
-    label: "Operators",
-    value: "12 / 14 Present",
-    pct: 86,
-    bar: "orange",
-    detail: "12 of 14 operators present. 2 on break rotation."
-  }
-];
-const ACTIONS = [
-  "Add 2 Robots (Scenario 2)",
-  "Add 2 Operators (Scenario 2)",
-  "Increase Chutes by 4 (Scenario 2)"
-];
-function isWarehouse(value) {
-  return value === "TECHNO" || value === "YOTO" || value === "JAFZA";
+import {
+  getLocalProcessDetails,
+  getProcessDetails,
+  normalizeProcessDetail,
+} from "@/services/processDetails.service";
+import { getErrorMessage } from "@/utils/api";
+
+function queryValue(query, key) {
+  const value = query[key];
+  return typeof value === "string" ? value : "";
 }
-function isProcess(value) {
-  return !!value && value in processData;
+
+function matchWarehouse(warehouses, value) {
+  if (!warehouses.length) return "";
+  const found = warehouses.find(
+    (item) => item.code.toLowerCase() === String(value || "").toLowerCase(),
+  );
+  return found?.code || warehouses[0].code;
 }
+
+function matchProcess(processes, value) {
+  if (!processes.length) return "";
+  const raw = String(value || "");
+  const exact = processes.find((item) => item.key === raw || item.label === raw);
+  if (exact) return exact.key;
+
+  const folded = raw.toLowerCase().replace(/^robo\s+/, "");
+  const loose = processes.find((item) => {
+    const key = item.key.toLowerCase();
+    return key === folded || raw.toLowerCase().includes(key) || key.includes(folded);
+  });
+
+  return loose?.key || processes[0].key;
+}
+
+function parsePoints(pointsStr) {
+  return String(pointsStr || "")
+    .split(" ")
+    .filter(Boolean)
+    .map((pt) => {
+      const [x, y] = pt.split(",").map(Number);
+      return { x, y };
+    })
+    .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
+}
+
+function slaAreaPath(points) {
+  if (!points.length) return "";
+  const line = points
+    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
+    .join(" ");
+  const last = points[points.length - 1];
+  return `${line} L ${last.x} 48 L ${points[0].x} 48 Z`;
+}
+
 function buildProcessLiveFeed(warehouse, process, detail) {
   return [
     `${warehouse} · ${process} · status ${detail.status}`,
@@ -69,44 +69,37 @@ function buildProcessLiveFeed(warehouse, process, detail) {
     `Downstream impact ${detail.downstream} · ${detail.journeys}`,
   ];
 }
-function queryValue(query, key) {
-  const value = query[key];
-  return typeof value === "string" ? value : null;
-}
 
-function ProcessContent() {
-  const router = useRouter();
+function ProcessContent({
+  dashboard,
+  warehouse,
+  processName,
+  loading,
+  streamKey,
+  onWarehouseChange,
+  onProcessChange,
+}) {
   const { showToast, showModal } = usePersonasUI();
-  const [warehouse, setWarehouse] = useState(() => {
-    const wh = queryValue(router.query, "warehouse");
-    return isWarehouse(wh) ? wh : "TECHNO";
-  });
-  const [process, setProcess] = useState(() => {
-    const p = queryValue(router.query, "process");
-    return isProcess(p) ? p : "Robo Sorting";
-  });
-  useEffect(() => {
-    if (!router.isReady) return;
-    const wh = queryValue(router.query, "warehouse");
-    const p = queryValue(router.query, "process");
-    if (isWarehouse(wh)) setWarehouse(wh);
-    if (isProcess(p)) setProcess(p);
-  }, [router.isReady, router.query]);
-  const detail = processData[process];
-  const streamKey = `${warehouse}:${process}`;
+  const warehouses = dashboard?.warehouses || [];
+  const warehouseMeta = warehouses.find((item) => item.code === warehouse);
+  const processes = warehouseMeta?.processes || [];
+  const detail = useMemo(() => {
+    const slice = dashboard?.today?.[warehouse]?.[processName];
+    return slice || normalizeProcessDetail();
+  }, [dashboard, warehouse, processName]);
   const liveFeed = useMemo(
-    () => buildProcessLiveFeed(warehouse, process, detail),
-    [warehouse, process, detail]
+    () => buildProcessLiveFeed(warehouse || "Warehouse", detail.label || processName, detail),
+    [warehouse, processName, detail],
   );
   const gaugeOffset = useMemo(
-    () => 188.5 * (1 - detail.util / 100),
-    [detail.util]
+    () => 188.5 * (1 - Math.min(Math.max(detail.util, 0), 100) / 100),
+    [detail.util],
   );
-  return <div id="page-process" className="page-view active">
-      {/* <div className="page-banner orange">
-        3. WAREHOUSE MANAGER LANDING PAGE – PROCESS / RESOURCE DETAILS
-      </div> */}
+  const queuePoints = useMemo(() => parsePoints(detail.queueChart.points), [detail.queueChart.points]);
+  const slaPoints = useMemo(() => parsePoints(detail.slaChart.points), [detail.slaChart.points]);
 
+  return (
+    <div id="page-process" className={`page-view active${loading ? " ops-loading" : ""}`}>
       <div className="proc-header-block">
         <h2>Process / Resource Details</h2>
         <div className="proc-filter-row">
@@ -114,34 +107,31 @@ function ProcessContent() {
             <div className="filter-label-wrap">
               <label htmlFor="proc-warehouse">Warehouse</label>
               <select
-    className="filter-select"
-    id="proc-warehouse"
-    value={warehouse}
-    onChange={(e) => {
-      setWarehouse(e.target.value);
-      showToast(`Warehouse filter: ${e.target.value}`);
-    }}
-  >
-                {WAREHOUSES.map((w) => <option key={w} value={w}>
-                    {w}
-                  </option>)}
+                className="filter-select"
+                id="proc-warehouse"
+                value={warehouse}
+                onChange={(e) => onWarehouseChange(e.target.value)}
+              >
+                {warehouses.map((item) => (
+                  <option key={item.code} value={item.code}>
+                    {item.code}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="filter-label-wrap">
               <label htmlFor="proc-process">Process</label>
               <select
-    className="filter-select"
-    id="proc-process"
-    value={process}
-    onChange={(e) => {
-      const next = e.target.value;
-      setProcess(next);
-      showToast(`Process filter: ${next}`);
-    }}
-  >
-                {PROCESSES.map((p) => <option key={p.value} value={p.value}>
-                    {p.label}
-                  </option>)}
+                className="filter-select"
+                id="proc-process"
+                value={processName}
+                onChange={(e) => onProcessChange(e.target.value)}
+              >
+                {processes.map((item) => (
+                  <option key={item.key} value={item.key}>
+                    {item.label}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -172,39 +162,25 @@ function ProcessContent() {
           <div className="section-title">Workload vs Capacity</div>
           <svg className="gauge-svg" viewBox="0 0 160 90">
             <path
-    d="M 20 75 A 60 60 0 0 1 140 75"
-    fill="none"
-    stroke="#e5e7eb"
-    strokeWidth="12"
-    strokeLinecap="round"
-  />
+              d="M 20 75 A 60 60 0 0 1 140 75"
+              fill="none"
+              stroke="#e5e7eb"
+              strokeWidth="12"
+              strokeLinecap="round"
+            />
             <path
-    d="M 20 75 A 60 60 0 0 1 140 75"
-    fill="none"
-    stroke={detail.gaugeColor}
-    strokeWidth="12"
-    strokeLinecap="round"
-    strokeDasharray="188.5"
-    strokeDashoffset={gaugeOffset}
-  />
-            <text
-    x="80"
-    y="58"
-    textAnchor="middle"
-    fontSize="18"
-    fontWeight="700"
-    fill={detail.statusColor}
-  >
+              d="M 20 75 A 60 60 0 0 1 140 75"
+              fill="none"
+              stroke={detail.gaugeColor}
+              strokeWidth="12"
+              strokeLinecap="round"
+              strokeDasharray="188.5"
+              strokeDashoffset={gaugeOffset}
+            />
+            <text x="80" y="58" textAnchor="middle" fontSize="18" fontWeight="700" fill={detail.statusColor}>
               {detail.util}%
             </text>
-            <text
-    x="80"
-    y="72"
-    textAnchor="middle"
-    fontSize="9"
-    fill="#374151"
-    fontWeight="500"
-  >
+            <text x="80" y="72" textAnchor="middle" fontSize="9" fill="#374151" fontWeight="500">
               Utilization
             </text>
           </svg>
@@ -223,34 +199,29 @@ function ProcessContent() {
           <div className="sla-value">
             <TypewriterValue text={`${detail.sla}%`} speed={36} delayMs={80} streamKey={streamKey} />
           </div>
-          <svg
-    className="sparkline-area"
-    viewBox="0 0 140 48"
-    preserveAspectRatio="none"
-    aria-hidden="true"
-  >
+          <svg className="sparkline-area" viewBox="0 0 140 48" preserveAspectRatio="none" aria-hidden="true">
             <defs>
               <linearGradient id="slaAreaFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#fca5a5" stopOpacity="0.45" />
-                <stop offset="100%" stopColor="#fee2e2" stopOpacity="0.2" />
+                <stop offset="0%" stopColor={detail.slaChart.color} stopOpacity="0.45" />
+                <stop offset="100%" stopColor={detail.slaChart.color} stopOpacity="0.12" />
               </linearGradient>
             </defs>
-            <path
-    d="M 0 42 L 0 20 L 14 24 L 28 14 L 42 22 L 56 18 L 70 30 L 84 16 L 98 24 L 112 20 L 126 22 L 140 18 L 140 42 Z"
-    fill="url(#slaAreaFill)"
-  />
-            <polyline
-    fill="none"
-    stroke="#dc2626"
-    strokeWidth="1.8"
-    strokeLinejoin="round"
-    strokeLinecap="round"
-    points="0,20 14,24 28,14 42,22 56,18 70,30 84,16 98,24 112,20 126,22 140,18"
-  />
-            {[0, 14, 28, 42, 56, 70, 84, 98, 112, 126, 140].map((cx, i) => {
-    const cy = [20, 24, 14, 22, 18, 30, 16, 24, 20, 22, 18][i];
-    return <circle key={cx} cx={cx} cy={cy} r="2.5" fill="#dc2626" />;
-  })}
+            {slaPoints.length ? (
+              <>
+                <path d={slaAreaPath(slaPoints)} fill="url(#slaAreaFill)" />
+                <polyline
+                  fill="none"
+                  stroke={detail.slaChart.color}
+                  strokeWidth="1.8"
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                  points={detail.slaChart.points}
+                />
+                {slaPoints.map((point) => (
+                  <circle key={`${point.x}-${point.y}`} cx={point.x} cy={point.y} r="2.5" fill={detail.slaChart.color} />
+                ))}
+              </>
+            ) : null}
           </svg>
         </div>
       </div>
@@ -258,29 +229,30 @@ function ProcessContent() {
       <div className="resource-breakdown-card">
         <div className="section-title">Resource Breakdown</div>
         <div className="resource-grid">
-          {RESOURCES.map((res, i) => <div
-    key={res.label}
-    className="resource-card"
-    role="button"
-    tabIndex={0}
-    onClick={() => showModal(res.label, res.detail)}
-  >
+          {detail.resources.length ? detail.resources.map((res, i) => (
+            <div
+              key={res.label}
+              className="resource-card"
+              role="button"
+              tabIndex={0}
+              onClick={() => showModal(res.label, res.detail)}
+            >
               <div className="res-label">{res.label}</div>
               <div className="res-value">
                 <TypewriterValue text={res.value} speed={22} delayMs={220 + i * 70} streamKey={streamKey} />
               </div>
               <div className="res-bar-row">
                 <div className="progress-bar">
-                  <div
-    className={`progress-fill ${res.bar}`}
-    style={{ width: `${res.pct}%` }}
-  />
+                  <div className={`progress-fill ${res.bar}`} style={{ width: `${res.pct}%` }} />
                 </div>
                 <span className="res-pct">
                   <TypewriterValue text={`${res.pct}%`} speed={30} delayMs={280 + i * 70} streamKey={streamKey} />
                 </span>
               </div>
-            </div>)}
+            </div>
+          )) : (
+            <div className="resource-card">No resources configured for this process.</div>
+          )}
         </div>
       </div>
 
@@ -288,35 +260,59 @@ function ProcessContent() {
         <div className="widget-card">
           <div className="section-title">Queue Trend (Units)</div>
           <svg
-    className="queue-chart-area"
-    viewBox="0 0 400 165"
-    preserveAspectRatio="xMidYMid meet"
-    aria-label="Queue trend chart"
-  >
-            <text x="38" y="120" fontSize="10" fill="#000" textAnchor="end" dominantBaseline="middle" fontFamily="Inter,sans-serif">0</text>
-            <text x="38" y="93.4" fontSize="10" fill="#000" textAnchor="end" dominantBaseline="middle" fontFamily="Inter,sans-serif">500</text>
-            <text x="38" y="66.8" fontSize="10" fill="#000" textAnchor="end" dominantBaseline="middle" fontFamily="Inter,sans-serif">1K</text>
-            <text x="38" y="40.2" fontSize="10" fill="#000" textAnchor="end" dominantBaseline="middle" fontFamily="Inter,sans-serif">1.5K</text>
-            <text x="38" y="13.6" fontSize="10" fill="#000" textAnchor="end" dominantBaseline="middle" fontFamily="Inter,sans-serif">2K</text>
-            <line x1="44" y1="120" x2="378" y2="120" stroke="#e5e7eb" strokeWidth="1" />
-            <line x1="44" y1="93.4" x2="378" y2="93.4" stroke="#e5e7eb" strokeWidth="1" />
-            <line x1="44" y1="66.8" x2="378" y2="66.8" stroke="#e5e7eb" strokeWidth="1" />
-            <line x1="44" y1="40.2" x2="378" y2="40.2" stroke="#e5e7eb" strokeWidth="1" />
-            <line x1="44" y1="13.6" x2="378" y2="13.6" stroke="#e5e7eb" strokeWidth="1" />
-            <polyline
-    fill="none"
-    stroke="#dc2626"
-    strokeWidth="2"
-    strokeLinejoin="round"
-    strokeLinecap="round"
-    points="44,66.8 74.4,66.8 104.8,75.6 135.2,54.4 165.6,40.2 196,43.8 226.4,35.85 256.8,25.25 287.2,30.55 317.6,35.85 348,41.15 378,43.8"
-  />
-            <text x="44" y="142" fontSize="10" fill="#000" textAnchor="middle" fontFamily="Inter,sans-serif">12 AM</text>
-            <text x="104.8" y="142" fontSize="10" fill="#000" textAnchor="middle" fontFamily="Inter,sans-serif">4 AM</text>
-            <text x="165.6" y="142" fontSize="10" fill="#000" textAnchor="middle" fontFamily="Inter,sans-serif">8 AM</text>
-            <text x="226.4" y="142" fontSize="10" fill="#000" textAnchor="middle" fontFamily="Inter,sans-serif">12 PM</text>
-            <text x="287.2" y="142" fontSize="10" fill="#000" textAnchor="middle" fontFamily="Inter,sans-serif">4 PM</text>
-            <text x="348" y="142" fontSize="10" fill="#000" textAnchor="middle" fontFamily="Inter,sans-serif">8 PM</text>
+            className="queue-chart-area"
+            viewBox="0 0 400 165"
+            preserveAspectRatio="xMidYMid meet"
+            aria-label="Queue trend chart"
+          >
+            {detail.queueChart.yLabels.map((tick) => (
+              <text
+                key={`y-${tick.label}-${tick.y}`}
+                x="38"
+                y={tick.y}
+                fontSize="10"
+                fill="#000"
+                textAnchor="end"
+                dominantBaseline="middle"
+                fontFamily="Inter,sans-serif"
+              >
+                {tick.label}
+              </text>
+            ))}
+            {detail.queueChart.yLabels.map((tick) => (
+              <line
+                key={`grid-${tick.y}`}
+                x1="44"
+                y1={tick.y}
+                x2="378"
+                y2={tick.y}
+                stroke="#e5e7eb"
+                strokeWidth="1"
+              />
+            ))}
+            {queuePoints.length ? (
+              <polyline
+                fill="none"
+                stroke="#dc2626"
+                strokeWidth="2"
+                strokeLinejoin="round"
+                strokeLinecap="round"
+                points={detail.queueChart.points}
+              />
+            ) : null}
+            {detail.queueChart.xLabels.map((tick) => (
+              <text
+                key={`x-${tick.label}`}
+                x={tick.x}
+                y="142"
+                fontSize="10"
+                fill="#000"
+                textAnchor="middle"
+                fontFamily="Inter,sans-serif"
+              >
+                {tick.label}
+              </text>
+            ))}
           </svg>
         </div>
         <div className="widget-card">
@@ -348,7 +344,7 @@ function ProcessContent() {
             </li>
             <li>
               <span>Downstream Impact</span>
-              <strong className={detail.downstreamClass || void 0}>
+              <strong className={detail.downstreamClass || undefined}>
                 <TypewriterValue text={detail.downstream} speed={28} delayMs={460} streamKey={streamKey} />
               </strong>
             </li>
@@ -364,28 +360,30 @@ function ProcessContent() {
             <TypewriterValue text={detail.journeys} speed={20} delayMs={500} cursor="▌" streamKey={streamKey} />
           </div>
           <span
-    className="insight-link"
-    role="button"
-    tabIndex={0}
-    onClick={() => showToast("Opening Item Journey for 125 affected journeys (4,860 units)")}
-  >
+            className="insight-link"
+            role="button"
+            tabIndex={0}
+            onClick={() => showToast(`Opening Item Journey for ${detail.journeys}`)}
+          >
             View Item Journey →
           </span>
         </div>
         <div className="widget-card">
           <div className="section-title">Actions</div>
           <ul className="action-list">
-            {ACTIONS.map((action) => <li
-    key={action}
-    role="button"
-    tabIndex={0}
-    onClick={() => showToast(`Action selected: ${action}`)}
-  >
+            {detail.actions.map((action) => (
+              <li
+                key={action}
+                role="button"
+                tabIndex={0}
+                onClick={() => showToast(`Action selected: ${action}`)}
+              >
                 <span className="action-left">
                   <span className="action-icon">👤</span> {action}
                 </span>
                 <span className="action-chevron">›</span>
-              </li>)}
+              </li>
+            ))}
           </ul>
         </div>
       </div>
@@ -395,26 +393,161 @@ function ProcessContent() {
         <br />
         <strong>KPIs shown:</strong> Resource and workstation level details
       </div>
-    </div>;
+    </div>
+  );
 }
-function ProcessPage() {
+
+function ProcessShell({
+  initialDashboard,
+  initialWarehouse = "",
+  initialProcess = "",
+  fetchedAt,
+  initialError = "",
+  refreshNonce = 0,
+  onLoadingChange,
+  onLastUpdatedChange,
+}) {
+  const router = useRouter();
+  const { showToast } = usePersonasUI();
+  const [dashboard, setDashboard] = useState(
+    () => initialDashboard || getLocalProcessDetails(),
+  );
+  const [warehouse, setWarehouse] = useState(() =>
+    matchWarehouse((initialDashboard || getLocalProcessDetails()).warehouses || [], initialWarehouse),
+  );
+  const [processName, setProcessName] = useState(() => {
+    const source = initialDashboard || getLocalProcessDetails();
+    const code = matchWarehouse(source.warehouses || [], initialWarehouse);
+    const processes = source.warehouses?.find((item) => item.code === code)?.processes || [];
+    return matchProcess(processes, initialProcess);
+  });
+  const [loading, setLoading] = useState(false);
+  const [streamKey, setStreamKey] = useState(0);
+
+  const applySelection = useCallback((source, warehouseValue, processValue) => {
+    const code = matchWarehouse(source.warehouses || [], warehouseValue);
+    const processes = source.warehouses?.find((item) => item.code === code)?.processes || [];
+    setWarehouse(code);
+    setProcessName(matchProcess(processes, processValue));
+  }, []);
+
+  useEffect(() => {
+    const next = initialDashboard || getLocalProcessDetails();
+    setDashboard(next);
+    applySelection(next, initialWarehouse, initialProcess);
+    onLastUpdatedChange?.(fetchedAt ? new Date(fetchedAt) : new Date());
+    if (initialError) showToast(initialError);
+  }, [initialDashboard, initialWarehouse, initialProcess, fetchedAt, initialError, showToast, onLastUpdatedChange, applySelection]);
+
+  useEffect(() => {
+    if (!router.isReady) return;
+    const wh = queryValue(router.query, "warehouse");
+    const proc = queryValue(router.query, "process");
+    if (!wh && !proc) return;
+    applySelection(dashboard, wh || warehouse, proc || processName);
+  }, [router.isReady, router.query]);
+
+  const loadDashboard = useCallback(async (opts = {}) => {
+    setLoading(true);
+    onLoadingChange?.(true);
+    const wh = opts.warehouse || warehouse;
+    const proc = opts.process || processName;
+
+    if (!opts.silent) {
+      showToast(`Fetching process details – ${wh}, ${proc}…`);
+    }
+
+    try {
+      const next = await getProcessDetails({ date: dashboard?.date });
+      setDashboard(next);
+      applySelection(next, wh, proc);
+      setStreamKey((n) => n + 1);
+      onLastUpdatedChange?.(new Date());
+      if (!opts.silent) {
+        showToast(`Process details updated – ${wh} / ${proc}.`);
+      }
+    } catch (error) {
+      showToast(getErrorMessage(error, "Failed to refresh process details."));
+    } finally {
+      setLoading(false);
+      onLoadingChange?.(false);
+    }
+  }, [applySelection, dashboard?.date, onLastUpdatedChange, onLoadingChange, processName, showToast, warehouse]);
+
+  useEffect(() => {
+    if (!refreshNonce) return;
+    loadDashboard({ warehouse, process: processName });
+    // refreshNonce is the only trigger
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshNonce]);
+
+  return (
+    <ProcessContent
+      dashboard={dashboard}
+      warehouse={warehouse}
+      processName={processName}
+      loading={loading}
+      streamKey={streamKey}
+      onWarehouseChange={(nextWarehouse) => {
+        const processes = dashboard.warehouses?.find((item) => item.code === nextWarehouse)?.processes || [];
+        const nextProcess = matchProcess(processes, processName);
+        applySelection(dashboard, nextWarehouse, nextProcess);
+        setStreamKey((n) => n + 1);
+        showToast(`Warehouse filter: ${nextWarehouse}`);
+      }}
+      onProcessChange={(nextProcess) => {
+        applySelection(dashboard, warehouse, nextProcess);
+        setStreamKey((n) => n + 1);
+        showToast(`Process filter: ${nextProcess}`);
+      }}
+    />
+  );
+}
+
+function ProcessPage({
+  initialDashboard,
+  initialWarehouse = "",
+  initialProcess = "",
+  fetchedAt,
+  initialError = "",
+}) {
   const { onMenuClick } = useLayout();
-  return <div className="page">
+  const [lastUpdated, setLastUpdated] = useState(
+    () => (fetchedAt ? new Date(fetchedAt) : new Date()),
+  );
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshNonce, setRefreshNonce] = useState(0);
+
+  useEffect(() => {
+    setLastUpdated(fetchedAt ? new Date(fetchedAt) : new Date());
+  }, [fetchedAt]);
+
+  return (
+    <div className="page">
       <Header
-    lastUpdated={PROC_LAST_UPDATED}
-    isRefreshing={false}
-    onRefresh={() => void 0}
-    onMenuClick={onMenuClick}
-    title="Process Details"
-    subtitle="Warehouse manager landing page — process and resource level execution"
-  />
+        lastUpdated={lastUpdated}
+        isRefreshing={isRefreshing}
+        onRefresh={() => setRefreshNonce((n) => n + 1)}
+        onMenuClick={onMenuClick}
+        title="Process Details"
+        subtitle="Warehouse manager landing page — process and resource level execution"
+      />
       <div className="page-body">
         <PersonasScope>
-          <ProcessContent />
+          <ProcessShell
+            initialDashboard={initialDashboard}
+            initialWarehouse={initialWarehouse}
+            initialProcess={initialProcess}
+            fetchedAt={fetchedAt}
+            initialError={initialError}
+            refreshNonce={refreshNonce}
+            onLoadingChange={setIsRefreshing}
+            onLastUpdatedChange={setLastUpdated}
+          />
         </PersonasScope>
       </div>
-    </div>;
+    </div>
+  );
 }
-export {
-  ProcessPage
-};
+
+export { ProcessPage };
