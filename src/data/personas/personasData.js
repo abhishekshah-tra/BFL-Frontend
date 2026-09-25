@@ -662,18 +662,6 @@ export const CT_TIMEFRAME_DATA = {
       techno: '45,124 78,122 111,118 144,113 177,106 210,98 243,91 276,84 309,80 342,84 375,91 400,102',
       xLabels: ['12 AM', '4 AM', '8 AM', '12 PM', '4 PM', '8 PM'],
     },
-    recommendation: {
-      title: "Today's Recommendation",
-      scenario: 'Scenario 2',
-      text: 'Hybrid model with <strong>+2 Robots</strong> and <strong>+2 Operators</strong> in TECHNO will increase throughput by <strong>18%</strong>, reduce <strong>waiting time</strong> by <strong>24%</strong> and improve <strong>SLA</strong> by <strong>5%</strong>.',
-      people: 468,
-      robots: 48,
-      alerts: 7,
-      simulations: 12,
-      peopleDetail: '468 people across all warehouses: YOTO 156, JAFZA 148, TECHNO 164',
-      robotsDetail: '48 robots total: YOTO 16, JAFZA 14, TECHNO 18 (2 offline)',
-      simsDetail: '12 simulations run today: 5 capacity, 4 routing, 3 staffing',
-    },
   },
   yesterday: {
     kpis: {
@@ -749,18 +737,6 @@ export const CT_TIMEFRAME_DATA = {
       techno: '45,128 78,125 111,120 144,115 177,110 210,104 243,98 276,92 309,88 342,92 375,98 400,108',
       xLabels: ['12 AM', '4 AM', '8 AM', '12 PM', '4 PM', '8 PM'],
     },
-    recommendation: {
-      title: "Yesterday's Recommendation",
-      scenario: 'Scenario 1',
-      text: 'Adding <strong>+1 Robot</strong> and <strong>+3 Operators</strong> in TECHNO would have reduced queue by <strong>15%</strong> and improved <strong>SLA</strong> by <strong>3%</strong> for the prior day.',
-      people: 462,
-      robots: 46,
-      alerts: 9,
-      simulations: 8,
-      peopleDetail: '462 people on shift yesterday: YOTO 154, JAFZA 146, TECHNO 162',
-      robotsDetail: '46 robots active yesterday: YOTO 16, JAFZA 14, TECHNO 16 (3 offline)',
-      simsDetail: '8 simulations run yesterday: 3 capacity, 3 routing, 2 staffing',
-    },
   },
   last7: {
     kpis: {
@@ -835,18 +811,6 @@ export const CT_TIMEFRAME_DATA = {
       jafza: '45,100 111,88 177,72 243,55 309,42 375,75',
       techno: '45,130 111,118 177,100 243,85 309,78 375,95',
       xLabels: ['Mon', 'Wed', 'Fri', 'Sun', 'Tue', 'Thu'],
-    },
-    recommendation: {
-      title: 'Weekly Recommendation',
-      scenario: 'Scenario 3',
-      text: '7-day analysis shows <strong>Hybrid staffing</strong> in TECHNO delivers best results: <strong>+12% throughput</strong>, <strong>-18% wait time</strong>, and <strong>+4% SLA</strong> vs current week average.',
-      people: 471,
-      robots: 49,
-      alerts: 5,
-      simulations: 34,
-      peopleDetail: '471 avg weekly headcount: YOTO 157, JAFZA 149, TECHNO 165',
-      robotsDetail: '49 robots deployed this week: YOTO 16, JAFZA 15, TECHNO 18',
-      simsDetail: '34 simulations run this week: 14 capacity, 12 routing, 8 staffing',
     },
   },
 };

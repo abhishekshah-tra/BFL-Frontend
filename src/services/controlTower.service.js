@@ -15,19 +15,6 @@ const EMPTY_KPI = {
   detail: '',
 };
 
-const EMPTY_RECOMMENDATION = {
-  title: 'Recommendation',
-  scenario: '',
-  text: '',
-  people: 0,
-  robots: 0,
-  alerts: 0,
-  simulations: 0,
-  peopleDetail: '',
-  robotsDetail: '',
-  simsDetail: '',
-};
-
 const withFallback = async (request, fallback) => {
   try {
     return await request();
@@ -82,10 +69,6 @@ export const normalizeControlTowerSlice = (slice = {}) => ({
         ? slice.chart.series
         : {},
     xLabels: Array.isArray(slice.chart?.xLabels) ? slice.chart.xLabels : [],
-  },
-  recommendation: {
-    ...EMPTY_RECOMMENDATION,
-    ...slice.recommendation,
   },
 });
 

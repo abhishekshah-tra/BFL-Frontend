@@ -385,7 +385,7 @@
     .bfl-personas .kpi-trend.down { color: #dc2626; }
     .bfl-personas .kpi-trend.orange { color: #d97706; }
 
-    .bfl-personas #page-control-tower.ct-loading #ct-kpi-row, .bfl-personas #page-control-tower.ct-loading .warehouse-card, .bfl-personas #page-control-tower.ct-loading .bottom-grid-2, .bfl-personas #page-control-tower.ct-loading .recommendation-panel {
+    .bfl-personas #page-control-tower.ct-loading #ct-kpi-row, .bfl-personas #page-control-tower.ct-loading .warehouse-card, .bfl-personas #page-control-tower.ct-loading .bottom-grid-2 {
       opacity: 0.55;
       pointer-events: none;
       transition: opacity 0.2s;
@@ -459,101 +459,6 @@
     }
     .bfl-personas .chart-area-lg { width: 100%; height: 200px; display: block; color: #000; }
     .bfl-personas .chart-area-lg text { fill: #000; }
-
-    .bfl-personas .recommendation-panel {
-      background: #f0fdf4;
-      border-radius: 12px;
-      padding: 18px 20px 52px;
-      position: relative;
-      margin-bottom: 20px;
-    }
-    .bfl-personas .recommendation-panel .rec-content { max-width: 72%; }
-    .bfl-personas .recommendation-panel .rec-title {
-      font-size: 14px;
-      font-weight: 700;
-      color: #0b1a30;
-      margin-bottom: 10px;
-    }
-    .bfl-personas .recommendation-panel .rec-title .rec-scenario {
-      font-weight: 600;
-      color: #374151;
-    }
-    .bfl-personas .recommendation-panel .rec-text {
-      font-size: 13px;
-      color: #166534;
-      line-height: 1.65;
-      margin-bottom: 14px;
-      border-left: 3px solid #22c55e;
-      padding-left: 12px;
-    }
-    .bfl-personas .recommendation-panel .rec-text strong {
-      color: #0b1a30;
-      font-weight: 700;
-    }
-    .bfl-personas .btn-outline {
-      display: inline-block;
-      padding: 8px 20px;
-      background: #fff;
-      color: #1d4ed8;
-      border: 1px solid #1d4ed8;
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      font-family: inherit;
-      transition: all 0.15s;
-    }
-    .bfl-personas .btn-outline:hover { background: #eff6ff; }
-    .bfl-personas .rec-stats-wrap {
-      position: absolute;
-      right: 20px;
-      bottom: -10px;
-      display: flex;
-      gap: 10px;
-    }
-    .bfl-personas .rec-stat-card {
-      background: #fff;
-      border-radius: 10px;
-      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.1);
-      padding: 10px 14px;
-      display: flex;
-      gap: 18px;
-      align-items: center;
-    }
-    .bfl-personas .rec-stat { text-align: center; min-width: 72px; cursor: pointer; }
-    .bfl-personas .rec-stat .rs-label { font-size: 10px; color: #6b7280; margin-bottom: 6px; white-space: nowrap; }
-    .bfl-personas .rec-stat .rs-value {
-      font-size: 24px;
-      font-weight: 700;
-      color: #2563eb;
-      line-height: 1;
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 44px;
-      min-height: 44px;
-    }
-    .bfl-personas .rec-stat .rs-value::before {
-      content: '';
-      position: absolute;
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      background: #dbeafe;
-      opacity: 0.55;
-      z-index: 0;
-    }
-    .bfl-personas .rec-stat .rs-value span { position: relative; z-index: 1; }
-    .bfl-personas .rec-stat .rs-circle {
-      width: 44px; height: 44px;
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px; font-weight: 700;
-      margin: 0 auto;
-    }
-    .bfl-personas .rec-stat .rs-circle.orange { background: #ffedd5; color: #ea580c; }
-    .bfl-personas .rec-stat .rs-circle.blue { background: #dbeafe; color: #2563eb; }
 
     .bfl-personas .ct-live-feed {
       display: flex;
@@ -703,15 +608,6 @@
       font-size: 11px; font-weight: 700; margin-right: 8px; flex-shrink: 0;
     }
 
-    .bfl-personas .recommendation-box {
-      background: #eff6ff;
-      border: 1px solid #bfdbfe;
-      border-radius: 8px;
-      padding: 14px;
-      font-size: 12px;
-      color: #1e40af;
-      line-height: 1.6;
-    }
     .bfl-personas .btn-primary {
       display: inline-block;
       margin-top: 10px;
@@ -1250,7 +1146,4 @@
       .bfl-personas .kpi-row { grid-template-columns: repeat(3, 1fr); }
       .bfl-personas .resource-grid { grid-template-columns: repeat(2, 1fr); }
       .bfl-personas .bottom-grid-2, .bfl-personas .wm-top-row { grid-template-columns: 1fr; }
-      .bfl-personas .recommendation-panel { padding-bottom: 20px; }
-      .bfl-personas .recommendation-panel .rec-content { max-width: 100%; }
-      .bfl-personas .rec-stats-wrap { position: static; margin-top: 16px; justify-content: flex-end; flex-wrap: wrap; }
     }

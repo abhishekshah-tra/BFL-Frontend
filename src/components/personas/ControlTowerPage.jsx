@@ -41,10 +41,6 @@ function parseChartPoints(pointsStr) {
     });
 }
 
-function stripHtml(html) {
-  return String(html ?? "").replace(/<[^>]+>/g, "");
-}
-
 function chartLabelXs(count) {
   if (count <= 0) return [];
   const x0 = 45;
@@ -80,26 +76,8 @@ function parseBottleneckNav(name) {
   return { page: "operations" };
 }
 
-function getRecommendationNav(rec, warehouses = {}) {
-  const ids = Object.keys(warehouses);
-  const haystack = `${rec?.text || ""} ${rec?.scenario || ""}`;
-  const fromText = ids.find((id) => haystack.includes(id));
-  const warehouse =
-    fromText ||
-    [...ids].sort(
-      (a, b) => (warehouses[b]?.capacity || 0) - (warehouses[a]?.capacity || 0),
-    )[0];
-
-  if (!warehouse) return { page: "operations" };
-
-  const process = warehouses[warehouse]?.bottleneck;
-  return process
-    ? { page: "process", warehouse, process }
-    : { page: "operations", warehouse };
-}
-
 function buildLiveFeed(data) {
-  const { kpis, warehouses = {}, bottlenecks = [], recommendation: rec } = data;
+  const { kpis, warehouses = {}, bottlenecks = [] } = data;
   const warehouseLines = Object.entries(warehouses).map(([id, wh]) =>
     `${id} ${wh.throughput} units · capacity ${wh.capacity}% · SLA ${wh.sla}${wh.bottleneck ? ` · ${wh.bottleneck}` : ""} · ${wh.status}`,
   );
@@ -110,7 +88,6 @@ function buildLiveFeed(data) {
     bottlenecks[0]
       ? `Bottleneck ${bottlenecks[0].name} ${bottlenecks[0].pct} · ${kpis.alerts.value} open alerts`
       : `${kpis.alerts.value} open alerts`,
-    stripHtml(rec.text),
   ].filter(Boolean);
 }
 
@@ -123,7 +100,7 @@ function ControlTowerContent({
   onRefresh,
 }) {
   const { showModal, navigateTo } = usePersonasUI();
-  const { kpis, warehouses, bottlenecks, chart, recommendation: rec } = data;
+  const { kpis, warehouses, bottlenecks, chart } = data;
   const warehouseIds = Object.keys(warehouses || {});
   const liveFeed = useMemo(() => buildLiveFeed(data), [data]);
   const chartSeries = useMemo(
@@ -132,7 +109,6 @@ function ControlTowerContent({
   );
   const xLabels = chart?.xLabels || [];
   const xPositions = chartLabelXs(xLabels.length);
-  const recNav = getRecommendationNav(rec, warehouses);
   const throughputHeader =
     timeframe === "last7" ? "Throughput (Units/Week)" : "Throughput (Units/Day)";
 
@@ -468,98 +444,8 @@ function ControlTowerContent({
         </div>
       </div>
 
-      <div className="recommendation-panel">
-        <div className="rec-content">
-          <div className="rec-title" id="ct-rec-title">
-            {rec.title} {rec.scenario ? <span className="rec-scenario">(Based on {rec.scenario})</span> : null}
-          </div>
-          <div className="rec-text" id="ct-rec-text">
-            <TypewriterValue className="ct-tw-block" text={rec.text} speed={18} delayMs={420} cursor="▌" streamKey={streamKey} />
-          </div>
-          <button
-            type="button"
-            className="btn-outline"
-            data-nav={recNav.page}
-            data-process={recNav.process}
-            data-warehouse={recNav.warehouse}
-            onClick={() => navigateTo(recNav.page, {
-              warehouse: recNav.warehouse,
-              ...(recNav.process ? { process: recNav.process } : {}),
-            })}
-          >
-            View Recommendation
-          </button>
-        </div>
-        <div className="rec-stats-wrap">
-          <div className="rec-stat-card">
-            <div
-              className="rec-stat"
-              data-detail={rec.peopleDetail}
-              id="ct-rec-people"
-              onClick={(e) => {
-                e.stopPropagation();
-                showModal("Total People", rec.peopleDetail);
-              }}
-            >
-              <div className="rs-label">Total People</div>
-              <div className="rs-value">
-                <span id="ct-rec-people-val">
-                  <TypewriterValue text={rec.people} speed={40} delayMs={500} streamKey={streamKey} />
-                </span>
-              </div>
-            </div>
-            <div
-              className="rec-stat"
-              data-detail={rec.robotsDetail}
-              id="ct-rec-robots"
-              onClick={(e) => {
-                e.stopPropagation();
-                showModal("Total Robots", rec.robotsDetail);
-              }}
-            >
-              <div className="rs-label">Total Robots</div>
-              <div className="rs-value">
-                <span id="ct-rec-robots-val">
-                  <TypewriterValue text={rec.robots} speed={40} delayMs={560} streamKey={streamKey} />
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className="rec-stat-card">
-            <div
-              className="rec-stat"
-              data-nav="operations"
-              id="ct-rec-alerts"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigateTo("operations");
-              }}
-            >
-              <div className="rs-label">Open Alerts</div>
-              <div className="rs-circle orange" id="ct-rec-alerts-val">
-                <TypewriterValue text={rec.alerts} speed={50} delayMs={620} streamKey={streamKey} />
-              </div>
-            </div>
-            <div
-              className="rec-stat"
-              data-detail={rec.simsDetail}
-              id="ct-rec-sims"
-              onClick={(e) => {
-                e.stopPropagation();
-                showModal("Simulations Run", rec.simsDetail);
-              }}
-            >
-              <div className="rs-label">Simulations Run</div>
-              <div className="rs-circle blue" id="ct-rec-sims-val">
-                <TypewriterValue text={rec.simulations} speed={50} delayMs={680} streamKey={streamKey} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="page-focus-block">
-        <strong>Focus:</strong> Strategic performance, risks, and recommendations
+        <strong>Focus:</strong> Strategic performance and risks
         <br />
         <strong>KPIs shown:</strong> High level and comparative across warehouses
       </div>
@@ -676,7 +562,7 @@ function ControlTowerPage({
         onRefresh={() => setRefreshNonce((n) => n + 1)}
         onMenuClick={onMenuClick}
         title="Control Tower"
-        subtitle="Executive landing page — network-wide performance and recommendations"
+        subtitle="Executive landing page — network-wide performance"
       />
       <div className="page-body">
         <PersonasScope>
